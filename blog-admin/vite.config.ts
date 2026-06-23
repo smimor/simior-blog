@@ -96,7 +96,7 @@ export default defineConfig(({ mode }: { mode: string }) => {
       proxy: {
         '/api': {
           target: VITE_API_PROXY_URL,
-          changeOrigin: true, // 允许跨域请求数据
+          changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, '')
         }
       }
