@@ -1,13 +1,11 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
 
-RUN npm install -g pnpm@latest --registry=https://registry.npmmirror.com
-
-COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile --registry=https://registry.npmmirror.com
+COPY package.json ./
+RUN npm install --registry=https://registry.npmmirror.com
 
 COPY . .
-RUN pnpm build
+RUN npm run build
 
 FROM nginx:alpine
 LABEL maintainer="simior"
