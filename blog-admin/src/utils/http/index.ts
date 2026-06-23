@@ -64,7 +64,7 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
   (request: InternalAxiosRequestConfig) => {
     const { accessToken } = useUserStore()
-    if (accessToken) request.headers.set('Authorization', accessToken)
+    if (accessToken) request.headers.set('Authorization', `Bearer ${accessToken}`)
 
     if (request.data && !(request.data instanceof FormData) && !request.headers['Content-Type']) {
       request.headers.set('Content-Type', 'application/json')
@@ -125,7 +125,7 @@ function resetUnauthorizedError() {
 /** 退出登录函数 */
 function logOut() {
   setTimeout(() => {
-    useUserStore().logOut()
+    useUserStore().logOut(true)
   }, LOGOUT_DELAY)
 }
 

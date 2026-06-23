@@ -143,11 +143,15 @@ function handleLoginStatus(
   to: RouteLocationNormalized,
   userStore: ReturnType<typeof useUserStore>
 ): true | RouteLocationRaw {
-  if (userStore.isLogin || to.path === RoutesAlias.Login || isStaticRoute(to.path)) {
+  if (to.path === RoutesAlias.Login || isStaticRoute(to.path)) {
     return true
   }
 
-  userStore.logOut()
+  if (userStore.isLogin && userStore.accessToken) {
+    return true
+  }
+
+  userStore.logOut(true)
   return {
     name: 'Login',
     query: { redirect: to.fullPath }
