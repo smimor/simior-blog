@@ -1,0 +1,20 @@
+// md-editor 的暗黑模式
+.md-editor {
+  //background-color: var(--md-edit-bg) !important;
+
+  &.md-editor-dark {
+    //background-color: var(--md-edit-bg) !important;
+  }
+}
+
+.md-editor-footer {
+  align-items: center;
+}
+
+//.md-editor-input-wrapper {
+//  background-color: inherit !important;
+//}
+//
+//.md-editor-preview-wrapper {
+//  background-color: inherit !important;
+//}

@@ -1,0 +1,38 @@
+import type { AppRouteRecord } from '@/types'
+
+export const systemRoutes: AppRouteRecord = {
+  path: '/system',
+  name: 'System',
+  component: '/index/index',
+  redirect: '/system/user',
+  meta: {
+    title: 'menus.system.title',
+    icon: 'ri:user-3-line',
+    roles: ['ADMIN']
+  },
+  children: [
+    {
+      path: 'user',
+      name: 'User',
+      component: '/system/user',
+      meta: {
+        title: 'menus.system.user',
+        icon: 'ri:user-line',
+        keepAlive: true,
+        roles: ['ADMIN']
+      }
+    },
+    {
+      path: 'user-center',
+      name: 'UserCenter',
+      component: '/system/user-center',
+      meta: {
+        title: 'menus.system.userCenter',
+        icon: 'ri:user-line',
+        isHide: true,
+        keepAlive: true,
+        isHideTab: true
+      }
+    }
+  ]
+}

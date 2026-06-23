@@ -1,0 +1,174 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ==================== Light Mode Variables ==================== */
+:root {
+    /* Base Colors */
+    --base-color: #ffffff;
+    --theme-color: var(--main-color);
+
+    /* Theme Colors - OKLCH Format */
+    --brand-primary: oklch(24.691% 0.00645 258.424); /* 主紫色 */
+    --brand-secondary: oklch(0.72 0.19 231.6); /* 次要紫色 */
+    --brand-error: oklch(0.73 0.15 25.3); /* 错误色保持红色 */
+    --brand-info: oklch(0.58 0.03 254.1); /* 信息色使用主紫色 */
+    --brand-success: oklch(0.78 0.17 166.1); /* 成功色保持绿色 */
+    --brand-warning: oklch(0.78 0.14 75.5); /* 警告色保持橙色 */
+    --brand-danger: oklch(0.68 0.22 25.3); /* 危险色保持红色 */
+
+    /* Gray Scale - Light Mode */
+    --gray-100: #f9fafb;
+    --gray-200: #f2f4f5;
+    --gray-300: #e6eaeb;
+    --gray-400: #dbdfe1;
+    --gray-500: #949eb7;
+    --gray-600: #7987a1;
+    --gray-700: #4d5875;
+    --gray-800: #383853;
+    --gray-900: #323251;
+
+    /* Border Colors */
+    --card-border: rgba(0, 0, 0, 0.08); /* 卡片边框 */
+    --default-border: #e2e8ee; /* 默认边框 */
+    --default-border-dashed: #dbdfe9; /* 虚线边框 */
+
+    /* Background Colors */
+    --default-bg-color: #fafbfc; /* 页面背景色 */
+    --default-box-color: #ffffff; /* 默认盒子背景色 */
+
+    /* Hover Color */
+    --hover-color: #edeff0;
+
+    /* Active Color */
+    --active-color: #f2f4f5;
+
+    /* Element Component Active Color */
+    --el-active-color: #f2f4f5;
+
+}
+
+/* ==================== Dark Mode Variables ==================== */
+html.dark {
+    /* Base Colors */
+    --base-color: #000000;
+
+    /* Gray Scale - Dark Mode */
+    --gray-100: #110f0f;
+    --gray-200: #17171c;
+    --gray-300: #393946;
+    --gray-400: #505062;
+    --gray-500: #73738c;
+    --gray-600: #8f8fa3;
+    --gray-700: #ababba;
+    --gray-800: #c7c7d1;
+    --gray-900: #e3e3e8;
+
+    /* Border Colors */
+    --card-border: rgba(255, 255, 255, 0.08); /* 卡片边框 */
+    --default-border: rgba(255, 255, 255, 0.1); /* 默认边框 */
+    --default-border-dashed: #363843; /* 虚线边框 */
+
+    /* Background Colors */
+    --default-bg-color: #070707; /* 页面背景色 */
+    --default-box-color: #161618; /* 默认盒子背景色 */
+
+    /* Hover Color */
+    --hover-color: #252530;
+
+    /* Active Color */
+    --active-color: #202226;
+
+    /* Element Component Active Color */
+    --el-active-color: #2e2e38;
+
+}
+
+/* ==================== Tailwind Theme Configuration ==================== */
+@theme {
+    /* Box Color (Light: white / Dark: black) */
+    --color-box: var(--default-box-color);
+
+    /* System Theme Color */
+    --color-theme: var(--theme-color);
+
+    /* Hover Color */
+    --color-hover-color: var(--hover-color);
+
+    /* Active Color */
+    --color-active-color: var(--active-color);
+
+    /* Active Color */
+    --color-el-active-color: var(--active-color);
+
+    /* ElementPlus Theme Colors */
+    --color-primary: var(--brand-primary);
+    --color-secondary: var(--brand-secondary);
+    --color-error: var(--brand-error);
+    --color-info: var(--brand-info);
+    --color-success: var(--brand-success);
+    --color-warning: var(--brand-warning);
+    --color-danger: var(--brand-danger);
+
+    /* Gray Scale Colors (Auto-adapts to dark mode) */
+    --color-g-100: var(--gray-100);
+    --color-g-200: var(--gray-200);
+    --color-g-300: var(--gray-300);
+    --color-g-400: var(--gray-400);
+    --color-g-500: var(--gray-500);
+    --color-g-600: var(--gray-600);
+    --color-g-700: var(--gray-700);
+    --color-g-800: var(--gray-800);
+    --color-g-900: var(--gray-900);
+}
+
+
+/* ==================== Custom Border Radius Utilities ==================== */
+@utility rounded-custom-xs {
+    border-radius: calc(var(--custom-radius) / 2);
+}
+
+@utility rounded-custom-sm {
+    border-radius: calc(var(--custom-radius) / 2 + 2px);
+}
+
+/* ==================== Custom Utility Classes ==================== */
+@utility flex-c {
+    @apply flex items-center;
+}
+
+@utility flex-b {
+    @apply flex justify-between;
+}
+
+@utility flex-cc {
+    @apply flex items-center justify-center;
+}
+
+@utility flex-cb {
+    @apply flex items-center justify-between;
+}
+
+/* Transition Utilities */
+@utility tad-200 {
+    @apply transition-all duration-200;
+}
+
+@utility tad-300 {
+    @apply transition-all duration-300;
+}
+
+/* Cursor Utilities */
+@utility c-p {
+    @apply cursor-pointer;
+}
+
+/* View Transition 相关样式 */
+::view-transition-new(root),
+::view-transition-old(root) {
+    animation: none;
+}
+
+.dark::view-transition-old(root) {
+    z-index: 9999;
+}

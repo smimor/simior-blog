@@ -1,0 +1,47 @@
+spring:
+  profiles:
+    active: dev
+
+  # Spring 全局 Servlet 配置
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+
+  # Jackson 全局配置
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+
+# mybatis-plus
+mybatis-plus:
+  type-aliases-package: org.simior.model.entity
+  configuration:
+    map-underscore-to-camel-case: true # 驼峰命名
+    default-enum-type-handler: com.baomidou.mybatisplus.core.handlers.MybatisEnumTypeHandler # 枚举
+  global-config:
+    db-config:
+      id-type: auto # 主键自增
+      update-strategy: not_null # 更新策略: 只更新非空字段
+      logic-delete-field: deleted # 逻辑删除字段, 默认为del_flag, 字段类型可以为boolean或者Integer
+      logic-delete-value: 1 # 逻辑已删除字段值(默认为1)
+      logic-not-delete-value: 0 # 逻辑未删除字段值(默认为0)
+
+# Sa-Token 配置
+sa-token:
+  token-name: Authorization # token 名称（同时也是 cookie 名称）
+  timeout: 2592000  # token 有效期（单位：秒） 默认30天，-1 代表永久有效
+  token-style: simple-uuid # token 风格（默认可取值：uuid、simple-uuid、random-32、random-64、random-128、tik）
+  is-read-cookie: false # 是否从 Cookie 中读取 token
+  is-write-header: true # 是否将 token 写入响应头
+  token-prefix: Bearer # 指定 token 提交时的前缀
+
+
+blog:
+  # 文件上传配置
+  upload:
+    mode: minio # 上传模式：minio 或 oss
+
+logging:
+  level:
+    root: info

@@ -1,0 +1,120 @@
+import { useSettingStore } from '@/stores'
+import { ContainerWidthEnum } from '@/enums/appEnum'
+
+/**
+ * 设置项通用处理逻辑
+ */
+export function useSettingsHandlers() {
+  const settingStore = useSettingStore()
+
+  // DOM 操作相关
+  const domOperations = {
+    // 设置HTML类名
+    setHtmlClass: (className: string, add: boolean) => {
+      const el = document.documentElement
+      if (add) {
+        el.classList.add(className)
+      } else {
+        el.classList.remove(className)
+      }
+    },
+
+    // 设置根元素属性
+    setRootAttribute: (attribute: string, value: string) => {
+      const el = document.documentElement
+      el.setAttribute(attribute, value)
+    },
+
+    // 设置body类名
+    setBodyClass: (className: string, add: boolean) => {
+      const el = document.body
+      if (add) {
+        el.classList.add(className)
+      } else {
+        el.classList.remove(className)
+      }
+    }
+  }
+
+  // 通用切换处理器
+  const createToggleHandler = (storeMethod: () => void, callback?: () => void) => {
+    return () => {
+      storeMethod()
+      callback?.()
+    }
+  }
+
+  // 通用值变更处理器
+  const createValueHandler = <T>(
+    storeMethod: (value: T) => void,
+    callback?: (value: T) => void
+  ) => {
+    return (value: T) => {
+      if (value !== undefined && value !== null) {
+        storeMethod(value)
+        callback?.(value)
+      }
+    }
+  }
+
+  // 基础设置处理器
+  const basicHandlers = {
+    // 工作台标签页
+    workTab: createToggleHandler(() => settingStore.setWorkTab(!settingStore.showWorkTab)),
+
+    // 菜单手风琴
+    uniqueOpened: createToggleHandler(() => settingStore.setUniqueOpened()),
+
+    // 显示菜单按钮
+    menuButton: createToggleHandler(() => settingStore.setButton()),
+
+    // 显示刷新按钮
+    refreshButton: createToggleHandler(() => settingStore.setShowRefreshButton()),
+
+    // 显示面包屑
+    crumbs: createToggleHandler(() => settingStore.setCrumbs()),
+
+    // 显示语言切换
+    language: createToggleHandler(() => settingStore.setLanguage()),
+
+    // 显示进度条
+    nprogress: createToggleHandler(() => settingStore.setNprogress()),
+
+    // 页面切换动画
+    pageTransition: createValueHandler<string>((transition: string) =>
+      settingStore.setPageTransition(transition)
+    ),
+
+    // 圆角大小
+    customRadius: createValueHandler<string>((radius: string) =>
+      settingStore.setCustomRadius(radius)
+    )
+  }
+
+  // 颜色设置处理器
+  const colorHandlers = {
+    // 选择主题色
+    selectColor: (theme: string) => {
+      settingStore.setElementTheme(theme)
+      settingStore.reload()
+    }
+  }
+
+  // 容器设置处理器
+  const containerHandlers = {
+    // 设置容器宽度
+    setWidth: (type: ContainerWidthEnum) => {
+      settingStore.setContainerWidth(type)
+      settingStore.reload()
+    }
+  }
+
+  return {
+    domOperations,
+    basicHandlers,
+    colorHandlers,
+    containerHandlers,
+    createToggleHandler,
+    createValueHandler
+  }
+}

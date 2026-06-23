@@ -1,0 +1,26 @@
+# 环境变量（包含敏感信息，禁止提交）
+.env
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.iws
+*.iml
+*.ipr
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Build
+**/target/
+**/dist/
+**/node_modules/
+
+# Docker
+*.tar

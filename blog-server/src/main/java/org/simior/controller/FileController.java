@@ -1,0 +1,127 @@
+package org.simior.controller;
+
+import cn.dev33.satoken.annotation.SaCheckLogin;
+import lombok.RequiredArgsConstructor;
+import org.simior.common.result.Result;
+import org.simior.properties.UploadProperties;
+import org.simior.strategy.UploadStrategy;
+import org.simior.strategy.UploadStrategyFactory;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+/**
+ * 文件上传控制器
+ * <p>
+ * 提供图片和文章图片的上传及文件删除功能。
+ * URL 前缀：/v1/files，所有接口需要登录。
+ */
+@RestController
+@RequestMapping("/v1/files")
+@RequiredArgsConstructor
+public class FileController {
+
+    private final UploadStrategyFactory uploadStrategyFactory;
+    private final UploadProperties uploadProperties;
+
+    /**
+     * 上传图片（通用，5MB 限制）
+     *
+     * @param file 图片文件
+     * @return 文件访问地址
+     */
+    @SaCheckLogin
+    @PostMapping("/images")
+    public Result<String> uploadImage(@RequestParam("file") MultipartFile file) {
+        return doUpload(file, "images", 5);
+    }
+
+    /**
+     * 上传文章图片（10MB 限制）
+     *
+     * @param file 图片文件
+     * @return 文件访问地址
+     */
+    @SaCheckLogin
+    @PostMapping("/articles")
+    public Result<String> uploadArticleImage(@RequestParam("file") MultipartFile file) {
+        return doUpload(file, "articles", 10);
+    }
+
+    /**
+     * 删除文件
+     *
+     * @param fileUrl 文件地址
+     * @return 删除结果
+     */
+    @SaCheckLogin
+    @DeleteMapping
+    public Result<String> deleteFile(@RequestParam String fileUrl) {
+        if (!isValidFileUrl(fileUrl)) {
+            return Result.error("无效的文件地址");
+        }
+        if (fileUrl.contains("..")) {
+            return Result.error("无效的文件地址");
+        }
+        UploadStrategy uploadStrategy = uploadStrategyFactory.getStrategy();
+        uploadStrategy.deleteFile(fileUrl);
+        return Result.success("删除成功");
+    }
+
+    /**
+     * 通用文件上传逻辑
+     *
+     * @param file      上传文件
+     * @param directory 存储子目录
+     * @param maxMB     最大文件大小（MB）
+     * @return 上传结果
+     */
+    private Result<String> doUpload(MultipartFile file, String directory, int maxMB) {
+        if (file.isEmpty()) {
+            return Result.error("文件不能为空");
+        }
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            return Result.error("只支持图片格式");
+        }
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || originalFilename.isBlank()) {
+            return Result.error("文件名不能为空");
+        }
+        String lowerName = originalFilename.toLowerCase();
+        if (!lowerName.matches(".*\\.(jpg|jpeg|png|gif|bmp|webp|svg|ico)$")) {
+            return Result.error("不支持的图片格式");
+        }
+        long maxSize = (long) maxMB * 1024 * 1024;
+        if (file.getSize() > maxSize) {
+            return Result.error("文件大小不能超过" + maxMB + "MB");
+        }
+        UploadStrategy uploadStrategy = uploadStrategyFactory.getStrategy();
+        String fileUrl = uploadStrategy.uploadFile(file, directory);
+        return Result.success("上传成功", fileUrl);
+    }
+
+    /**
+     * 校验文件 URL 是否属于当前配置的存储服务
+     *
+     * @param fileUrl 待校验的文件 URL
+     * @return 如果 URL 有效且属于当前存储服务返回 {@code true}，否则返回 {@code false}
+     */
+    private boolean isValidFileUrl(String fileUrl) {
+        if (fileUrl == null || fileUrl.isBlank()) {
+            return false;
+        }
+        String mode = uploadProperties.getMode();
+        if ("minio".equals(mode)) {
+            String expectedPrefix = uploadProperties.getMinio().getEndpoint() + "/"
+                    + uploadProperties.getMinio().getBucketName() + "/";
+            return fileUrl.startsWith(expectedPrefix);
+        } else if ("oss".equals(mode)) {
+            String expectedHost = "https://" + uploadProperties.getOss().getBucketName()
+                    + "." + uploadProperties.getOss().getEndpoint() + "/";
+            return fileUrl.startsWith(expectedHost);
+        } else if ("local".equals(mode)) {
+            return !fileUrl.contains("..");
+        }
+        return false;
+    }
+}
