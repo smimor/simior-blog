@@ -45,19 +45,6 @@ yum-config-manager --add-repo https://mirrors.aliyun.com/docker-ce/linux/centos/
 sed -i 's/download.docker.com/mirrors.aliyun.com/g' /etc/yum.repos.d/docker-ce.repo
 yum install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 systemctl enable --now docker
-
-# 配置镜像加速
-mkdir -p /etc/docker
-cat > /etc/docker/daemon.json << 'EOF'
-{
-  "registry-mirrors": [
-    "https://mirror.ccs.tencentyun.com",
-    "https://hub-mirror.c.163.com"
-  ]
-}
-EOF
-systemctl daemon-reload
-systemctl restart docker
 ```
 
 ## 一、安装环境（Ubuntu/Debian）
