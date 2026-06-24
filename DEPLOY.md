@@ -33,7 +33,7 @@
 
 ---
 
-## 一、安装环境（CentOS）
+## 一、安装环境（CentOS 7）
 
 ```bash
 # 安装 git
@@ -45,12 +45,27 @@ yum-config-manager --add-repo https://mirrors.aliyun.com/docker-ce/linux/centos/
 sed -i 's/download.docker.com/mirrors.aliyun.com/g' /etc/yum.repos.d/docker-ce.repo
 yum install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 systemctl enable --now docker
+
+# 修改 Docker 存储驱动为 vfs（解决 CentOS 7 XFS 的 EPerM 问题）
+systemctl stop docker
+mkdir -p /opt/docker
+cat > /etc/docker/daemon.json << 'EOF'
+{
+  "data-root": "/opt/docker",
+  "storage-driver": "vfs",
+  "registry-mirrors": [
+    "https://mirror.ccs.tencentyun.com",
+    "https://hub-mirror.c.163.com",
+    "https://docker.m.daocloud.io"
+  ]
+}
+EOF
+systemctl start docker
 ```
 
 ## 一、安装环境（Ubuntu/Debian）
 
 ```bash
-# 安装 git 和 docker
 apt-get update && apt-get install -y ca-certificates curl git
 curl -fsSL https://get.docker.com | sh
 systemctl enable --now docker
@@ -64,7 +79,8 @@ apt-get install -y docker-compose-plugin
 ```bash
 cd /opt
 git clone https://github.com/smimor/simior-blog.git
-cd /opt/simior-blog && bash scripts/deploy.sh
+cd simior-blog
+bash scripts/deploy.sh
 ```
 
 部署完成后访问：
@@ -83,18 +99,6 @@ bash /opt/simior-blog/scripts/reset-server.sh
 ```
 
 仅清理部署文件（容器、数据卷、项目文件），**保留 git、docker**。
-
-如需彻底卸载 docker：
-
-```bash
-# CentOS
-yum remove -y docker-ce docker-ce-cli containerd.io
-rm -rf /var/lib/docker
-
-# Ubuntu/Debian
-apt-get purge -y docker-ce docker-ce-cli containerd.io
-rm -rf /var/lib/docker
-```
 
 ---
 
@@ -128,12 +132,6 @@ bash /opt/simior-blog/scripts/backup.sh
 
 自动备份：每天凌晨 3 点，保留 7 天。
 
-### 恢复备份
-
-```bash
-gunzip < /opt/simior-blog/backups/simior-blog_20260101_030000.sql.gz | docker exec -i simior-mysql mysql -uroot -p'密码' `simior-blog`
-```
-
 ---
 
 ## 五、常见问题
@@ -145,15 +143,21 @@ docker compose -f /opt/simior-blog/docker-compose.yml ps
 docker compose -f /opt/simior-blog/docker-compose.yml logs blog-server --tail=50
 ```
 
-### 数据库连接失败
+### EPerM 错误
+
+CentOS 7 的 XFS 文件系统不支持 Docker overlay2 的写入操作。需要将 Docker 存储驱动改为 `vfs`：
 
 ```bash
-docker exec simior-mysql mysql -uroot -p'密码' -e "SELECT 1"
+systemctl stop docker
+cat > /etc/docker/daemon.json << 'EOF'
+{
+  "data-root": "/opt/docker",
+  "storage-driver": "vfs"
+}
+EOF
+systemctl start docker
+docker system prune -a -f
 ```
-
-### 中文乱码
-
-确认 JDBC URL 包含 `characterEncoding=utf-8`（注意是 `utf-8` 不是 `utf8`）。
 
 ### 登录提示"未提供 token"
 
