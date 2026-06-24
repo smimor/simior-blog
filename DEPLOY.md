@@ -33,22 +33,55 @@
 
 ---
 
-## 一、三步部署
-
-### 步骤 1：初始化服务器（安装 git、docker）
+## 一、安装环境（CentOS）
 
 ```bash
-bash scripts/setup-server.sh
+# 安装 git
+yum install -y git
+
+# 安装 docker
+yum install -y yum-utils
+yum-config-manager --add-repo https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+sed -i 's/download.docker.com/mirrors.aliyun.com/g' /etc/yum.repos.d/docker-ce.repo
+yum install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+systemctl enable --now docker
+
+# 配置镜像加速
+mkdir -p /etc/docker
+cat > /etc/docker/daemon.json << 'EOF'
+{
+  "registry-mirrors": [
+    "https://mirror.ccs.tencentyun.com",
+    "https://hub-mirror.c.163.com"
+  ]
+}
+EOF
+systemctl daemon-reload
+systemctl restart docker
 ```
 
-### 步骤 2：部署项目
+## 一、安装环境（Ubuntu/Debian）
 
 ```bash
+# 安装 git 和 docker
+apt-get update && apt-get install -y ca-certificates curl git
+curl -fsSL https://get.docker.com | sh
+systemctl enable --now docker
+apt-get install -y docker-compose-plugin
+```
+
+---
+
+## 二、部署
+
+```bash
+cd /opt
+git clone https://github.com/smimor/simior-blog.git
+cd simior-blog
 bash scripts/deploy.sh
 ```
 
-### 步骤 3：访问
-
+部署完成后访问：
 - 前台：`http://服务器IP/`
 - 后台：`http://服务器IP/admin`
 - API：`http://服务器IP/api/`
@@ -57,10 +90,10 @@ bash scripts/deploy.sh
 
 ---
 
-## 二、清理部署
+## 三、清理部署
 
 ```bash
-bash scripts/reset-server.sh
+bash /opt/simior-blog/scripts/reset-server.sh
 ```
 
 仅清理部署文件（容器、数据卷、项目文件），**保留 git、docker**。
@@ -79,31 +112,18 @@ rm -rf /var/lib/docker
 
 ---
 
-## 三、脚本说明
-
-| 脚本 | 作用 | 保留 git/docker |
-|------|------|-----------------|
-| `setup-server.sh` | 安装 git、docker | - |
-| `deploy.sh` | 部署项目 | 保留 |
-| `reset-server.sh` | 清理部署文件 | 保留 |
-| `backup.sh` | 数据库备份 | 保留 |
-
----
-
 ## 四、运维
 
 ### 查看日志
 
 ```bash
-docker compose logs -f
-docker compose logs -f blog-server
+docker compose -f /opt/simior-blog/docker-compose.yml logs -f
 ```
 
 ### 重启服务
 
 ```bash
-docker compose restart
-docker compose restart blog-server
+docker compose -f /opt/simior-blog/docker-compose.yml restart
 ```
 
 ### 更新部署
@@ -117,7 +137,7 @@ docker compose up -d --build
 ### 数据库备份
 
 ```bash
-bash scripts/backup.sh
+bash /opt/simior-blog/scripts/backup.sh
 ```
 
 自动备份：每天凌晨 3 点，保留 7 天。
@@ -125,13 +145,7 @@ bash scripts/backup.sh
 ### 恢复备份
 
 ```bash
-gunzip < backups/simior-blog_20260101_030000.sql.gz | docker exec -i simior-mysql mysql -uroot -p'密码' `simior-blog`
-```
-
-### 重置服务器
-
-```bash
-bash scripts/reset-server.sh
+gunzip < /opt/simior-blog/backups/simior-blog_20260101_030000.sql.gz | docker exec -i simior-mysql mysql -uroot -p'密码' `simior-blog`
 ```
 
 ---
@@ -141,9 +155,8 @@ bash scripts/reset-server.sh
 ### Nginx 502 Bad Gateway
 
 ```bash
-docker compose ps
-docker compose logs blog-server --tail=50
-docker compose restart nginx
+docker compose -f /opt/simior-blog/docker-compose.yml ps
+docker compose -f /opt/simior-blog/docker-compose.yml logs blog-server --tail=50
 ```
 
 ### 数据库连接失败
