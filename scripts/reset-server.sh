@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================
 # 清理部署文件（保留 git、docker）
-# 用法：bash scripts/reset-server.sh
+# 用法：cd /opt/simior-blog && bash scripts/reset-server.sh
 # ============================================
 
 set -e

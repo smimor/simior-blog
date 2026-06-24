@@ -77,8 +77,7 @@ apt-get install -y docker-compose-plugin
 ```bash
 cd /opt
 git clone https://github.com/smimor/simior-blog.git
-cd simior-blog
-bash scripts/deploy.sh
+cd /opt/simior-blog && bash scripts/deploy.sh
 ```
 
 部署完成后访问：
