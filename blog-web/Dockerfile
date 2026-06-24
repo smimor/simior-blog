@@ -11,6 +11,7 @@ COPY package.json package-lock.json* ./
 RUN npm install --registry=https://registry.npmmirror.com
 
 COPY . .
+RUN chmod -R 777 /app
 RUN npm run build
 
 # --- 运行阶段 ---
