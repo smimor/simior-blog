@@ -24,3 +24,10 @@ logs/
 
 # Docker
 *.tar
+
+# 数据库备份
+backups/
+
+# Next.js
+blog-web/.next/
+blog-web/out/
