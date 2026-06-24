@@ -33,108 +33,22 @@
 
 ---
 
-## 一、服务器初始化
+## 一、三步部署
 
-### 1.1 系统要求
-
-- 操作系统：CentOS 7+ / Ubuntu 18+ / Debian 9+
-- 内存：≥ 2GB
-- 磁盘：≥ 10GB
-- 开放端口：80
-
-### 1.2 安装 Docker
-
-**CentOS：**
+### 步骤 1：初始化服务器（安装 git、docker）
 
 ```bash
-yum install -y yum-utils git
-yum-config-manager --add-repo https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
-sed -i 's/download.docker.com/mirrors.aliyun.com/g' /etc/yum.repos.d/docker-ce.repo
-yum install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
-systemctl enable --now docker
+bash scripts/setup-server.sh
 ```
 
-**Ubuntu/Debian：**
+### 步骤 2：部署项目
 
 ```bash
-apt-get update && apt-get install -y ca-certificates curl git
-curl -fsSL https://get.docker.com | sh
-systemctl enable --now docker
-apt-get install -y docker-compose-plugin
-```
-
-### 1.3 配置 Docker 镜像加速
-
-```bash
-mkdir -p /etc/docker
-cat > /etc/docker/daemon.json << 'EOF'
-{
-  "registry-mirrors": [
-    "https://mirror.ccs.tencentyun.com",
-    "https://hub-mirror.c.163.com"
-  ]
-}
-EOF
-systemctl daemon-reload
-systemctl restart docker
-```
-
----
-
-## 二、文件清单
-
-```
-simior-blog/
-├── docker-compose.yml          # Docker 编排（7 个服务）
-├── .env.example                # 环境变量模板
-├── .env                        # 实际环境变量（不提交 Git）
-├── .gitignore
-├── DEPLOY.md                   # 本文档
-│
-├── nginx/
-│   ├── nginx.conf              # Nginx 主配置
-│   └── conf.d/
-│       └── default.conf        # 路由规则（/ → web, /admin → admin, /api/ → server）
-│
-├── blog-server/                # Spring Boot 后端
-│   ├── Dockerfile
-│   ├── .mvn/settings.xml       # 阿里云 Maven 镜像
-│   └── src/main/resources/
-│       ├── application.yml
-│       ├── application-prod.yml
-│       └── simior-blog.sql     # 数据库初始化脚本
-│
-├── blog-admin/                 # Vue 3 管理后台
-│   ├── Dockerfile
-│   ├── nginx.conf              # 容器内 Nginx（SPA fallback）
-│   └── src/
-│
-├── blog-web/                   # Next.js 前台
-│   ├── Dockerfile
-│   ├── next.config.ts
-│   └── src/app/
-│
-├── scripts/
-│   ├── deploy.sh               # 一键部署
-│   ├── backup.sh               # 数据库备份
-│   └── reset-server.sh         # 重置服务器
-│
-└── .github/workflows/
-    └── deploy.yml              # GitHub Actions CI/CD
-```
-
----
-
-## 三、一键部署
-
-```bash
-cd /opt
-git clone https://github.com/smimor/simior-blog.git
-cd simior-blog
 bash scripts/deploy.sh
 ```
 
-部署完成后访问：
+### 步骤 3：访问
+
 - 前台：`http://服务器IP/`
 - 后台：`http://服务器IP/admin`
 - API：`http://服务器IP/api/`
@@ -143,49 +57,40 @@ bash scripts/deploy.sh
 
 ---
 
-## 四、手动部署
-
-### 4.1 配置环境变量
+## 二、清理部署
 
 ```bash
-cp .env.example .env
-vim .env
+bash scripts/reset-server.sh
 ```
 
-### 4.2 导入数据库
+仅清理部署文件（容器、数据卷、项目文件），**保留 git、docker**。
+
+如需彻底卸载 docker：
 
 ```bash
-docker compose up -d mysql
-sleep 15
-docker exec -i simior-mysql mysql -uroot -p'密码' `simior-blog` < blog-server/src/main/resources/simior-blog.sql
-```
+# CentOS
+yum remove -y docker-ce docker-ce-cli containerd.io
+rm -rf /var/lib/docker
 
-### 4.3 启动所有服务
-
-```bash
-docker compose up -d
+# Ubuntu/Debian
+apt-get purge -y docker-ce docker-ce-cli containerd.io
+rm -rf /var/lib/docker
 ```
 
 ---
 
-## 五、CI/CD
+## 三、脚本说明
 
-### GitHub Secrets 配置
-
-| Secret | 说明 |
-|--------|------|
-| `DOCKER_NAMESPACE` | 阿里云 ACR 命名空间 |
-| `DOCKER_USERNAME` | 阿里云 ACR 用户名 |
-| `DOCKER_PASSWORD` | 阿里云 ACR 密码 |
-| `SERVER_HOST` | 服务器 IP |
-| `SERVER_USER` | SSH 用户名 |
-| `SERVER_SSH_KEY` | SSH 私钥 |
-
-推送 `main` 分支后自动构建部署。
+| 脚本 | 作用 | 保留 git/docker |
+|------|------|-----------------|
+| `setup-server.sh` | 安装 git、docker | - |
+| `deploy.sh` | 部署项目 | 保留 |
+| `reset-server.sh` | 清理部署文件 | 保留 |
+| `backup.sh` | 数据库备份 | 保留 |
 
 ---
 
-## 六、运维
+## 四、运维
 
 ### 查看日志
 
@@ -231,7 +136,7 @@ bash scripts/reset-server.sh
 
 ---
 
-## 七、常见问题
+## 五、常见问题
 
 ### Nginx 502 Bad Gateway
 
