@@ -1,0 +1,14 @@
+.git
+.gitignore
+.idea
+*.iml
+*.ipr
+*.iws
+*.md
+backups/
+.env
+blog-admin/node_modules
+blog-admin/dist
+blog-web/node_modules
+blog-web/.next
+blog-server/target

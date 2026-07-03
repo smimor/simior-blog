@@ -7,7 +7,8 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+DEPLOY_DIR="$(dirname "$SCRIPT_DIR")"
+PROJECT_DIR="$(dirname "$DEPLOY_DIR")"
 
 echo "=========================================="
 echo "  simior-blog 部署"
@@ -19,12 +20,12 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-if [ ! -f "$SCRIPT_DIR/../docker-compose.yml" ]; then
+if [ ! -f "$DEPLOY_DIR/docker-compose.yml" ]; then
     echo "错误：请在 deploy/ 目录下执行此脚本"
     exit 1
 fi
 
-cd "$SCRIPT_DIR/.."
+cd "$DEPLOY_DIR"
 
 # ---- 生成 .env ----
 echo "[1/4] 生成配置文件..."
@@ -56,7 +57,7 @@ for i in $(seq 1 30); do
     sleep 2
 done
 
-docker exec -i simior-mysql mysql -uroot -p'Sb7kL9xQ2wR' `simior-blog` < "$PROJECT_DIR/blog-server/src/main/resources/simior-blog.sql"
+docker exec -i simior-mysql mysql -uroot -p'Sb7kL9xQ2wR' -D "simior-blog" < "$PROJECT_DIR/blog-server/src/main/resources/simior-blog.sql"
 echo "数据库导入完成"
 
 # ---- 构建并启动服务 ----

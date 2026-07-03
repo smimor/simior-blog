@@ -28,7 +28,7 @@ docker exec simior-mysql mysqldump \
     --quick \
     --routines \
     --triggers \
-    `simior-blog` | gzip > "${BACKUP_DIR}/simior-blog_${DATE}.sql.gz"
+    -D "simior-blog" | gzip > "${BACKUP_DIR}/simior-blog_${DATE}.sql.gz"
 
 # 删除过期备份
 find "${BACKUP_DIR}" -name "*.sql.gz" -mtime +${RETENTION_DAYS} -delete
