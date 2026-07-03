@@ -35,12 +35,19 @@
 
 ```
 simior-blog/
-├── blog-admin/        # Vue 管理后台
-├── blog-server/       # Spring Boot 后端
-├── blog-web/          # Next.js 前台
-├── deploy/            # 部署配置
+├── blog-admin/              # Vue 管理后台源码
+├── blog-server/             # Spring Boot 后端源码
+├── blog-web/                # Next.js 前台源码
+├── deploy/                  # 所有部署相关文件
 │   ├── docker-compose.yml
 │   ├── .env.example
+│   ├── blog-admin/
+│   │   ├── Dockerfile
+│   │   └── nginx.conf
+│   ├── blog-server/
+│   │   └── Dockerfile
+│   ├── blog-web/
+│   │   └── Dockerfile
 │   ├── nginx/
 │   │   ├── nginx.conf
 │   │   └── conf.d/default.conf
@@ -48,7 +55,7 @@ simior-blog/
 │       ├── deploy.sh
 │       ├── backup.sh
 │       └── reset-server.sh
-├── DEPLOY.md          # 本文档
+├── DEPLOY.md                # 本文档
 └── README.md
 ```
 
