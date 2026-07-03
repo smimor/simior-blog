@@ -158,6 +158,7 @@ const router = useRouter()
         </el-select>
       </el-form-item>
 
+      <div>theme {{ isDark }}</div>
       <el-form-item>
         <MdEditor v-model="articleForm.content" :theme="isDark ? 'dark' : 'light'" />
       </el-form-item>

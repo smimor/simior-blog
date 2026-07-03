@@ -1,14 +1,17 @@
 #!/bin/bash
 # ============================================
 # simior-blog 数据库备份脚本
-# 用法：bash scripts/backup.sh
-# 定时备份：0 3 * * * /opt/simior-blog/scripts/backup.sh
+# 用法：bash deploy/scripts/backup.sh
+# 定时备份：0 3 * * * /opt/simior-blog/deploy/scripts/backup.sh
 # ============================================
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR/.."
+
 # 加载环境变量
-source /opt/simior-blog/.env 2>/dev/null || true
+source .env 2>/dev/null || true
 
 BACKUP_DIR="/opt/simior-blog/backups"
 MYSQL_PASSWORD="${MYSQL_ROOT_PASSWORD:-Sb7kL9xQ2wR}"

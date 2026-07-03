@@ -13,13 +13,6 @@ spring:
       password: ${REDIS_PASSWORD}
       database: 0
 
-      lettuce:
-        pool:
-          max-active: 50
-          max-idle: 20
-          min-idle: 5
-          max-wait: 3000ms
-
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl

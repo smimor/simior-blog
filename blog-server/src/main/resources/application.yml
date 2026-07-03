@@ -1,12 +1,17 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
 spring:
   profiles:
     active: dev
 
-  # Spring 全局 Servlet 配置
+  # 文件上传限制
   servlet:
     multipart:
-      max-file-size: 20MB
-      max-request-size: 20MB
+      max-file-size: 50MB # 单个上传文件最大 50MB
+      max-request-size: 50MB # 总上传文件最大 50MB
 
   # Jackson 全局配置
   jackson:

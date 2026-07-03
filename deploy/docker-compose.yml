@@ -92,7 +92,7 @@ services:
 
   # ---- 后端服务 ----
   blog-server:
-    build: ./blog-server
+    build: ../blog-server
     container_name: simior-server
     restart: unless-stopped
     depends_on:
@@ -133,7 +133,7 @@ services:
 
   # ---- 前端管理后台 ----
   blog-admin:
-    build: ./blog-admin
+    build: ../blog-admin
     container_name: simior-admin
     restart: unless-stopped
     depends_on:
@@ -153,7 +153,7 @@ services:
 
   # ---- 前台（Next.js）----
   blog-web:
-    build: ./blog-web
+    build: ../blog-web
     container_name: simior-web
     restart: unless-stopped
     environment:

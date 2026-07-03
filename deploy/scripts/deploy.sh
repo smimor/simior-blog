@@ -1,10 +1,13 @@
 #!/bin/bash
 # ============================================
-# 部署脚本（需要先克隆代码并进入目录）
-# 用法：cd /opt/simior-blog && bash scripts/deploy.sh
+# 部署脚本（在 deploy/ 目录下执行）
+# 用法：cd /opt/simior-blog/deploy && bash scripts/deploy.sh
 # ============================================
 
 set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
 echo "=========================================="
 echo "  simior-blog 部署"
@@ -16,12 +19,14 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-if [ ! -f "docker-compose.yml" ]; then
-    echo "错误：请在项目根目录下执行此脚本"
+if [ ! -f "$SCRIPT_DIR/../docker-compose.yml" ]; then
+    echo "错误：请在 deploy/ 目录下执行此脚本"
     exit 1
 fi
 
-# ---- 生成配置文件 ----
+cd "$SCRIPT_DIR/.."
+
+# ---- 生成 .env ----
 echo "[1/4] 生成配置文件..."
 cat > .env << 'EOF'
 MYSQL_ROOT_PASSWORD=Sb7kL9xQ2wR
@@ -29,7 +34,8 @@ MINIO_ACCESS_KEY=admin
 MINIO_SECRET_KEY=mK3pL8vN5qT
 EOF
 
-cat > blog-web/.env << 'EOF'
+# ---- 生成 blog-web/.env ----
+cat > "$PROJECT_DIR/blog-web/.env" << 'EOF'
 NEXT_PUBLIC_API_URL=/api
 NEXT_PUBLIC_SITE_NAME=Simior Blog
 EOF
@@ -50,7 +56,7 @@ for i in $(seq 1 30); do
     sleep 2
 done
 
-docker exec -i simior-mysql mysql -uroot -p'Sb7kL9xQ2wR' `simior-blog` < blog-server/src/main/resources/simior-blog.sql
+docker exec -i simior-mysql mysql -uroot -p'Sb7kL9xQ2wR' `simior-blog` < "$PROJECT_DIR/blog-server/src/main/resources/simior-blog.sql"
 echo "数据库导入完成"
 
 # ---- 构建并启动服务 ----
@@ -59,8 +65,8 @@ docker compose up -d --build
 
 # ---- 配置定时备份 ----
 echo "[4/4] 配置定时备份..."
-chmod +x scripts/backup.sh
-(crontab -l 2>/dev/null; echo "0 3 * * * /opt/simior-blog/scripts/backup.sh >> /var/log/simior-backup.log 2>&1") | crontab -
+chmod +x "$SCRIPT_DIR/backup.sh"
+(crontab -l 2>/dev/null | grep -v "simior-blog"; echo "0 3 * * * $SCRIPT_DIR/backup.sh >> /var/log/simior-backup.log 2>&1") | crontab -
 
 echo ""
 echo "=========================================="

@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================
 # 清理部署文件（保留 git、docker）
-# 用法：cd /opt/simior-blog && bash scripts/reset-server.sh
+# 用法：cd /opt/simior-blog/deploy && bash scripts/reset-server.sh
 # ============================================
 
 set -e
@@ -17,7 +17,7 @@ if [ "$confirm" != "y" ] && [ "$confirm" != "Y" ]; then
 fi
 
 echo "[1/3] 停止并删除容器和数据卷..."
-cd /opt/simior-blog 2>/dev/null || true
+cd /opt/simior-blog/deploy 2>/dev/null || true
 docker compose down -v --remove-orphans 2>/dev/null || true
 
 echo "[2/3] 清理 Docker 资源..."
@@ -35,5 +35,5 @@ echo "  清理完成"
 echo "  git: $(git --version 2>/dev/null || echo '未安装')"
 echo "  docker: $(docker --version 2>/dev/null || echo '未安装')"
 echo ""
-echo "  重新部署：bash scripts/deploy.sh"
+echo "  重新部署：cd deploy && bash scripts/deploy.sh"
 echo "=========================================="

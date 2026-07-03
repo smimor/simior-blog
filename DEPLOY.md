@@ -31,6 +31,27 @@
 | `http://IP/admin` | blog-admin:80 | Vue 管理后台 |
 | `http://IP/api/*` | blog-server:8080 | Spring Boot API |
 
+### 项目结构
+
+```
+simior-blog/
+├── blog-admin/        # Vue 管理后台
+├── blog-server/       # Spring Boot 后端
+├── blog-web/          # Next.js 前台
+├── deploy/            # 部署配置
+│   ├── docker-compose.yml
+│   ├── .env.example
+│   ├── nginx/
+│   │   ├── nginx.conf
+│   │   └── conf.d/default.conf
+│   └── scripts/
+│       ├── deploy.sh
+│       ├── backup.sh
+│       └── reset-server.sh
+├── DEPLOY.md          # 本文档
+└── README.md
+```
+
 ---
 
 ## 一、安装环境（CentOS 7）
@@ -79,7 +100,7 @@ apt-get install -y docker-compose-plugin
 ```bash
 cd /opt
 git clone https://github.com/smimor/simior-blog.git
-cd simior-blog
+cd simior-blog/deploy
 bash scripts/deploy.sh
 ```
 
@@ -95,7 +116,8 @@ bash scripts/deploy.sh
 ## 三、清理部署
 
 ```bash
-bash /opt/simior-blog/scripts/reset-server.sh
+cd /opt/simior-blog/deploy
+bash scripts/reset-server.sh
 ```
 
 仅清理部署文件（容器、数据卷、项目文件），**保留 git、docker**。
@@ -107,13 +129,15 @@ bash /opt/simior-blog/scripts/reset-server.sh
 ### 查看日志
 
 ```bash
-docker compose -f /opt/simior-blog/docker-compose.yml logs -f
+cd /opt/simior-blog/deploy
+docker compose logs -f
 ```
 
 ### 重启服务
 
 ```bash
-docker compose -f /opt/simior-blog/docker-compose.yml restart
+cd /opt/simior-blog/deploy
+docker compose restart
 ```
 
 ### 更新部署
@@ -121,13 +145,15 @@ docker compose -f /opt/simior-blog/docker-compose.yml restart
 ```bash
 cd /opt/simior-blog
 git pull
+cd deploy
 docker compose up -d --build
 ```
 
 ### 数据库备份
 
 ```bash
-bash /opt/simior-blog/scripts/backup.sh
+cd /opt/simior-blog/deploy
+bash scripts/backup.sh
 ```
 
 自动备份：每天凌晨 3 点，保留 7 天。
@@ -139,8 +165,9 @@ bash /opt/simior-blog/scripts/backup.sh
 ### Nginx 502 Bad Gateway
 
 ```bash
-docker compose -f /opt/simior-blog/docker-compose.yml ps
-docker compose -f /opt/simior-blog/docker-compose.yml logs blog-server --tail=50
+cd /opt/simior-blog/deploy
+docker compose ps
+docker compose logs blog-server --tail=50
 ```
 
 ### EPerM 错误
