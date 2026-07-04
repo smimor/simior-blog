@@ -33,8 +33,7 @@ simior-blog/
 │   └── scripts/
 │       ├── deploy.sh               # 部署
 │       └── reset-server.sh         # 重置数据
-└── .gitee-go/
-    └── pipeline.yml                # Gitee Go 自动部署流水线
+└── .github/workflows/deploy.yml    # GitHub Actions 自动部署
 ```
 
 ---
@@ -132,25 +131,17 @@ bash deploy/scripts/deploy.sh
 
 ---
 
-## 三、自动部署（Gitee Go）
+## 三、自动部署（GitHub Actions）
 
-### 前置准备
+在 GitHub 仓库 **Settings > Secrets and variables > Actions** 添加：
 
-1. 在 [Gitee Go](https://gitee.com/features/gitee-go) 中创建主机组（如 `simior-blog`）
-2. 在服务器上安装 Gitee Agent：
+| Secret | 值 |
+|--------|-----|
+| `SERVER_HOST` | 服务器 IP |
+| `SERVER_USER` | `root` |
+| `SERVER_PASSWORD` | SSH 密码 |
 
-```bash
-# 复制 Gitee Go 界面提供的安装脚本到服务器执行
-# 安装完成后会显示 Agent started success!
-```
-
-3. 将服务器加入主机组
-
-### 配置流水线
-
-仓库中已有 `.gitee-go/pipeline.yml`，推送代码到 main 分支后自动部署。
-
-如需修改主机组 ID，编辑 `pipeline.yml` 中的 `hostGroupID`。
+之后推送代码到 main 分支自动部署。
 
 ---
 
