@@ -10,7 +10,6 @@ backups/
 blog-admin/.idea
 blog-admin/node_modules
 blog-admin/dist
-blog-admin/.env
 blog-web/.env
 blog-web/node_modules
 blog-web/.next
