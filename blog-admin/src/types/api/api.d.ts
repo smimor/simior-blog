@@ -132,8 +132,6 @@ declare namespace Api {
     interface TagDTO {
       /** 标签名称 */
       tagName: string
-      /** 标签颜色 */
-      color: string
     }
 
     interface TagVO {
@@ -141,8 +139,6 @@ declare namespace Api {
       id: number
       /** 标签名称 */
       tagName: string
-      /** 标签颜色 */
-      color: string
       /** 文章数量 */
       articleCount: number
       /** 创建时间 */

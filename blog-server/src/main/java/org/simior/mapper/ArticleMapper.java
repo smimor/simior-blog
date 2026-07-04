@@ -17,45 +17,45 @@ import java.util.Map;
 public interface ArticleMapper extends BaseMapper<BlogArticle> {
 
     /**
-     * 原子递增浏览量，同时递增版本号以保持乐观锁一致性
+     * 原子递增浏览量（独立于乐观锁，不递增 version 避免冲突）
      */
-    @Update("UPDATE blog_article SET view_count = view_count + 1, version = version + 1 WHERE id = #{id} AND deleted = 0")
+    @Update("UPDATE blog_article SET view_count = view_count + 1 WHERE id = #{id} AND deleted = 0")
     int incrementViewCount(@Param("id") Long id);
 
     /**
-     * 原子递增点赞数，同时递增版本号
+     * 原子递增点赞数（独立于乐观锁，不递增 version 避免冲突）
      */
-    @Update("UPDATE blog_article SET like_count = like_count + 1, version = version + 1 WHERE id = #{id} AND deleted = 0")
+    @Update("UPDATE blog_article SET like_count = like_count + 1 WHERE id = #{id} AND deleted = 0")
     int incrementLikeCount(@Param("id") Long id);
 
     /**
-     * 原子递减点赞数（不低于0），同时递增版本号
+     * 原子递减点赞数（不低于0，独立于乐观锁）
      */
-    @Update("UPDATE blog_article SET like_count = GREATEST(0, like_count - 1), version = version + 1 WHERE id = #{id} AND deleted = 0")
+    @Update("UPDATE blog_article SET like_count = GREATEST(0, like_count - 1) WHERE id = #{id} AND deleted = 0")
     int decrementLikeCount(@Param("id") Long id);
 
     /**
-     * 原子递增收藏数，同时递增版本号
+     * 原子递增收藏数（独立于乐观锁，不递增 version 避免冲突）
      */
-    @Update("UPDATE blog_article SET collect_count = collect_count + 1, version = version + 1 WHERE id = #{id} AND deleted = 0")
+    @Update("UPDATE blog_article SET collect_count = collect_count + 1 WHERE id = #{id} AND deleted = 0")
     int incrementCollectCount(@Param("id") Long id);
 
     /**
-     * 原子递减收藏数（不低于0），同时递增版本号
+     * 原子递减收藏数（不低于0，独立于乐观锁）
      */
-    @Update("UPDATE blog_article SET collect_count = GREATEST(0, collect_count - 1), version = version + 1 WHERE id = #{id} AND deleted = 0")
+    @Update("UPDATE blog_article SET collect_count = GREATEST(0, collect_count - 1) WHERE id = #{id} AND deleted = 0")
     int decrementCollectCount(@Param("id") Long id);
 
     /**
-     * 原子递增评论数，同时递增版本号
+     * 原子递增评论数（独立于乐观锁，不递增 version 避免冲突）
      */
-    @Update("UPDATE blog_article SET comment_count = comment_count + 1, version = version + 1 WHERE id = #{id} AND deleted = 0")
+    @Update("UPDATE blog_article SET comment_count = comment_count + 1 WHERE id = #{id} AND deleted = 0")
     int incrementCommentCount(@Param("id") Long id);
 
     /**
-     * 原子递减评论数（不低于0），同时递增版本号
+     * 原子递减评论数（不低于0，独立于乐观锁）
      */
-    @Update("UPDATE blog_article SET comment_count = GREATEST(0, comment_count - 1), version = version + 1 WHERE id = #{id} AND deleted = 0")
+    @Update("UPDATE blog_article SET comment_count = GREATEST(0, comment_count - 1) WHERE id = #{id} AND deleted = 0")
     int decrementCommentCount(@Param("id") Long id);
 
     /**

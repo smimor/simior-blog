@@ -23,12 +23,11 @@ public class MybatisPlusConfig {
     @Bean
     public MybatisPlusInterceptor mybatisPlusInterceptor() {
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
+        // 添加分页插件（必须在乐观锁之前）
+        PaginationInnerInterceptor paginationInnerInterceptor = new PaginationInnerInterceptor(DbType.MYSQL);
+        interceptor.addInnerInterceptor(paginationInnerInterceptor);
         // 添加乐观锁插件
         interceptor.addInnerInterceptor(new OptimisticLockerInnerInterceptor());
-        // 添加分页插件
-        PaginationInnerInterceptor paginationInnerInterceptor = new PaginationInnerInterceptor(DbType.MYSQL);
-
-        interceptor.addInnerInterceptor(paginationInnerInterceptor);
         return interceptor;
     }
 

@@ -37,4 +37,4 @@ blog:
     minio:
       endpoint: http://127.0.0.1:9000    # 本地 MinIO 地址
       access-key: ${MINIO_ACCESS_KEY:admin}
-      secret-key: ${MINIO_SECRET_KEY:password123456}
+      secret-key: ${MINIO_SECRET_KEY:mK3pL8vN5qT}

@@ -4,5 +4,5 @@
  */
 export const RoutesAlias = {
   Layout: '/index/index', // 布局容器
-  Login: '/login', // 登录页
+  Login: '/auth/login', // 登录页
 } as const

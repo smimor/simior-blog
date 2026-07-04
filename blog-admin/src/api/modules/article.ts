@@ -41,7 +41,7 @@ export const articleApi = {
    * @param data 文章数据（标题、内容、分类、标签等）
    */
   publishArticle(data: Api.Article.ArticleDTO) {
-    return request.post<Api.Article.ArticleVO>({
+    return request.post<number>({
       url: BASE_URL,
       data
     })

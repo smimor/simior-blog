@@ -8,7 +8,7 @@ export const systemRoutes: AppRouteRecord = {
   meta: {
     title: 'menus.system.title',
     icon: 'ri:user-3-line',
-    roles: ['ADMIN']
+    roles: ['admin']
   },
   children: [
     {
@@ -19,7 +19,7 @@ export const systemRoutes: AppRouteRecord = {
         title: 'menus.system.user',
         icon: 'ri:user-line',
         keepAlive: true,
-        roles: ['ADMIN']
+        roles: ['admin']
       }
     },
     {
