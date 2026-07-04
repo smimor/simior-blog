@@ -61,7 +61,7 @@ public interface ArticleMapper extends BaseMapper<BlogArticle> {
     /**
      * 按分类统计已发布文章数量（GROUP BY 替代 N+1 查询）
      * <p>
-     * 仅统计未删除且未发布的文章，同时排除已删除分类下的文章。
+     * 仅统计未删除且已发布的文章，同时排除已删除分类下的文章。
      *
      * @return 每行包含 category_id 和 cnt 两个字段
      */

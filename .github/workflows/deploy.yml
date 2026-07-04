@@ -1,0 +1,106 @@
+# ============================================
+# GitHub Actions 自动部署工作流
+#
+# 触发条件：
+#   - push 到 main 分支
+#   - 手动触发（workflow_dispatch）
+#
+# 部署流程：
+#   1. SSH 连接到服务器
+#   2. 拉取最新代码
+#   3. 构建并启动所有 Docker 容器
+#
+# 使用前准备：
+#   1. 在 GitHub 仓库 Settings > Secrets 中添加：
+#      - SERVER_HOST: 服务器 IP
+#      - SERVER_USER: SSH 用户名（root）
+#      - SERVER_PASSWORD: SSH 密码
+# ============================================
+
+name: 自动部署
+
+# 触发条件
+on:
+  # push 到 main 分支时自动部署
+  push:
+    branches: [main]
+
+  # 手动触发（在 GitHub Actions 页面点击 "Run workflow"）
+  workflow_dispatch:
+
+jobs:
+  # ==========================================
+  # 部署任务
+  # ==========================================
+  deploy:
+    name: 部署到服务器
+    runs-on: ubuntu-latest
+
+    steps:
+      # 第 1 步：检出代码
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      # 第 2 步：SSH 部署到服务器
+      - name: 部署到服务器
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          script: |
+            # ============================================
+            # 自动部署脚本（在服务器上执行）
+            # ============================================
+
+            # 进入项目目录
+            cd /opt/simior-blog
+
+            # 拉取最新代码
+            echo "📥 拉取最新代码..."
+            git pull origin main
+
+            # 进入部署目录
+            cd deploy
+
+            # 生成 .env（如果不存在）
+            if [ ! -f .env ]; then
+              echo "📝 生成配置文件..."
+              cp .env.example .env
+            fi
+
+            # 生成 blog-web 环境变量
+            cat > ../blog-web/.env << 'ENVEOF'
+NEXT_PUBLIC_API_URL=/api
+NEXT_PUBLIC_SITE_NAME=Simior Blog
+ENVEOF
+
+            cat > ../blog-web/.env.production << 'ENVEOF'
+NEXT_PUBLIC_API_URL=/api
+NEXT_PUBLIC_SITE_NAME=Simior Blog
+ENVEOF
+
+            # 进入 docker 目录
+            cd docker
+
+            # 构建并启动所有服务
+            echo "🔨 构建并启动服务..."
+            docker compose up -d --build
+
+            # 等待服务启动
+            echo "⏳ 等待服务启动..."
+            sleep 30
+
+            # 检查服务状态
+            echo "📊 服务状态："
+            docker compose ps
+
+            echo ""
+            echo "✅ 部署完成！"
+            echo "   前台: http://${{ secrets.SERVER_HOST }}/"
+            echo "   后台: http://${{ secrets.SERVER_HOST }}/admin"
+            echo "   API:  http://${{ secrets.SERVER_HOST }}/api/"
+
+      # 第 3 步：部署完成通知（可选）
+      - name: 部署完成
+        run: echo "✅ 部署完成！访问 http://${{ secrets.SERVER_HOST }}/"

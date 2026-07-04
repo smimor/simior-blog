@@ -1,33 +1,40 @@
-# Development environment configuration
+# ============================================
+# 开发环境配置（本地运行）
+#
+# 用法：直接在 IDEA 中运行
+# 数据库地址：localhost（本地的 MySQL/Redis）
+# ============================================
+
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
+    # 数据库连接地址
+    # localhost = 本地数据库
+    # simior-blog = 数据库名（需要手动创建）
     url: jdbc:mysql://localhost:3306/simior-blog?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
-    username: ${MYSQL_USERNAME:root}
-    password: ${MYSQL_PASSWORD:123456}
+    username: ${DB_USERNAME:root}    # 默认 root
+    password: ${DB_PASSWORD:123456}  # 默认 123456
 
   data:
     redis:
-      host: localhost # Redis服务器地址
-      port: 6379 # Redis服务器连接端口
-      database: 0 # Redis数据库索引（默认为0）
-      password:  # Redis服务器连接密码（默认为空）
+      host: localhost       # 本地 Redis
+      port: 6379
+      database: 0           # Redis 数据库编号（0-15）
+      password:             # 无密码
 
 mybatis-plus:
   configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 输出 SQL 日志到控制台
+    # 开发时在控制台打印 SQL 语句，方便调试
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
 logging:
   level:
-    org.springframework.jdbc.support.JdbcTransactionManager: debug
-    org.simior: debug
+    org.springframework.jdbc.support.JdbcTransactionManager: debug   # 事务日志
+    org.simior: debug    # 博客项目日志
 
 blog:
   upload:
-    mode: minio
-    # MinIO配置
     minio:
-      endpoint: http://127.0.0.1:9000
+      endpoint: http://127.0.0.1:9000    # 本地 MinIO 地址
       access-key: ${MINIO_ACCESS_KEY:admin}
       secret-key: ${MINIO_SECRET_KEY:password123456}
-      bucket-name: simior-blog

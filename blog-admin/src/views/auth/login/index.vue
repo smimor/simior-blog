@@ -141,21 +141,21 @@ defineOptions({ name: 'Login' })
     {
       key: 'super',
       label: t('login.roles.super'),
-      username: 'Super',
+      username: 'admin',
       password: '123456',
       roles: ['R_SUPER']
     },
     {
       key: 'admin',
       label: t('login.roles.admin'),
-      username: 'Admin',
+      username: 'author',
       password: '123456',
       roles: ['R_ADMIN']
     },
     {
       key: 'user',
       label: t('login.roles.user'),
-      username: 'User',
+      username: 'user',
       password: '123456',
       roles: ['R_USER']
     }

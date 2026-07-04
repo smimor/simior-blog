@@ -1,0 +1,51 @@
+# ============================================
+# blog-web 前台 Dockerfile
+#
+# 多阶段构建：
+#   第 1 步：用 Node.js 编译 Next.js 代码
+#   第 2 步：用 Node.js 运行 standalone 服务器
+#
+# 构建命令：docker build -f deploy/docker/Dockerfile.web -t simior-web .
+# ============================================
+
+# ---- 第 1 步：编译构建 ----
+FROM node:latest AS builder
+WORKDIR /app
+
+# 复制 package.json
+COPY blog-web/package.json blog-web/
+
+# 安装依赖
+RUN cd blog-web && npm install --registry=https://registry.npmmirror.com
+
+# 复制源码并构建
+# Next.js 的 NEXT_PUBLIC_* 变量必须在构建时注入
+ARG NEXT_PUBLIC_API_URL=/api
+ARG NEXT_PUBLIC_SITE_NAME=Simior Blog
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_SITE_NAME=$NEXT_PUBLIC_SITE_NAME
+COPY blog-web/ blog-web/
+RUN cd blog-web && npm run build
+
+# ---- 第 2 步：运行 ----
+# 使用 standalone 模式：Next.js 会生成一个独立的 Node.js 服务器
+# 不需要 Nginx，自带 HTTP 服务器
+FROM node:latest
+LABEL maintainer="simior"
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+# 复制 standalone 服务器文件
+COPY --from=builder /app/blog-web/.next/standalone ./
+# 复制静态资源（JS、CSS、图片等）
+COPY --from=builder /app/blog-web/.next/static ./.next/static
+# 复制 public 目录（favicon 等）
+COPY --from=builder /app/blog-web/public ./public
+
+EXPOSE 3000
+
+# 启动 Next.js standalone 服务器
+CMD ["node", "server.js"]

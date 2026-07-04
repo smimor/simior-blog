@@ -1,0 +1,310 @@
+# ============================================
+# simior-blog Docker Compose 服务编排
+#
+# 包含 7 个服务：
+#   基础设施：MySQL（数据库）、Redis（缓存）、MinIO（文件存储）
+#   应用服务：blog-server（后端）、blog-admin（管理后台）、blog-web（前台）
+#   网关入口：Nginx（反向代理，所有请求统一从 80 端口进入）
+#
+# 使用方式：
+#   1. cd deploy/docker
+#   2. cp ../.env.example ../.env（首次部署时执行，生成配置文件）
+#   3. docker compose up -d（构建并启动所有服务）
+# ============================================
+
+services:
+
+  # ==========================================
+  # 基础设施服务
+  # ==========================================
+
+  # ---- MySQL 数据库 ----
+  # 作用：存储博客所有数据（文章、用户、评论等）
+  # 首次启动会自动执行 init.sql 导入数据库结构和初始数据
+  mysql:
+    image: mysql:latest
+    container_name: simior-mysql
+    restart: always
+    environment:
+      # MySQL root 密码，从 .env 文件读取，未设置时使用默认值
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-Sb7kL9xQ2wR}
+      # 自动创建的数据库名称
+      MYSQL_DATABASE: simior-blog
+      # 字符集设为 utf8mb4，支持中文和 emoji 表情
+      MYSQL_CHARACTER_SET_SERVER: utf8mb4
+      MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
+      # 时区设置，确保时间显示正确
+      TZ: Asia/Shanghai
+    ports:
+      # 端口映射：宿主机端口:容器端口
+      # 留空表示不暴露到宿主机，只能容器内部访问
+      # 如需外部连接数据库，改为 "3306:3306"
+      - "${DB_PORT_EXPOSE:-}:3306"
+    volumes:
+      # 数据持久化：容器删除后数据不丢失
+      - mysql-data:/var/lib/mysql
+      # 自动初始化：SQL 文件挂载到 MySQL 启动目录，首次启动自动执行
+      - ../../blog-server/src/main/resources/simior-blog.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      # 健康检查：确认 MySQL 真正可用，不只是端口开了
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s    # 每 10 秒检查一次
+      timeout: 5s      # 超时时间
+      retries: 10      # 连续失败 10 次才判定为不健康
+    deploy:
+      resources:
+        limits:
+          memory: 1g    # 最多使用 1GB 内存
+          cpus: "1.0"   # 最多使用 1 个 CPU 核心
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"  # 单个日志文件最大 50MB
+        max-file: "3"    # 最多保留 3 个日志文件
+    networks:
+      - simior-net
+
+  # ---- Redis 缓存 ----
+  # 作用：缓存热点数据，加速访问（如 session、热门文章）
+  redis:
+    image: redis:latest
+    container_name: simior-redis
+    restart: always
+    ports:
+      # 同上，留空表示不暴露到宿主机
+      - "${REDIS_PORT_EXPOSE:-}:6379"
+    volumes:
+      - redis-data:/data
+    command: >
+      redis-server
+      --appendonly yes          # 开启 AOF 持久化，重启后数据不丢失
+      --maxmemory 256mb         # 最多使用 256MB 内存
+      --maxmemory-policy allkeys-lru  # 内存满时，自动淘汰最久没用的数据
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: "0.5"
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
+    networks:
+      - simior-net
+
+  # ---- MinIO 对象存储 ----
+  # 作用：存储上传的文件（文章图片、头像等）
+  # 控制台地址：http://服务器IP:9001（用 .env 中的账号密码登录）
+  minio:
+    image: minio/minio:latest
+    container_name: simior-minio
+    restart: always
+    environment:
+      # MinIO 管理员账号密码
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-mK3pL8vN5qT}
+      TZ: Asia/Shanghai
+    ports:
+      # 9000 = API 端口（程序调用）
+      # 9001 = 控制台端口（浏览器管理界面）
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio-data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "0.5"
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
+    networks:
+      - simior-net
+
+  # ==========================================
+  # 应用服务
+  # ==========================================
+
+  # ---- blog-server 后端服务 ----
+  # 作用：Spring Boot 后端，提供所有 API 接口
+  # 技术栈：Java + Spring Boot + MyBatis-Plus
+  blog-server:
+    build:
+      context: ../..          # 构建上下文设为项目根目录（因为 Dockerfile 里要 COPY 源码）
+      dockerfile: deploy/docker/Dockerfile  # Dockerfile 路径
+    container_name: simior-server
+    restart: always
+    # 从 .env 文件加载环境变量（数据库密码、MinIO 密钥等）
+    env_file:
+      - ../.env
+    environment:
+      # 数据库连接配置（覆盖 .env 中的值）
+      DB_HOST: mysql          # MySQL 容器名（Docker 内部 DNS 自动解析）
+      DB_PORT: 3306
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD:-Sb7kL9xQ2wR}
+      # Redis 连接配置
+      REDIS_HOST: redis       # Redis 容器名
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""      # Redis 无密码
+      # CORS 跨域配置（* 表示允许所有来源）
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-*}
+      # MinIO 连接配置
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-admin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-mK3pL8vN5qT}
+      # 上传模式：minio 或 oss
+      BLOG_UPLOAD_MODE: ${BLOG_UPLOAD_MODE:-minio}
+      TZ: Asia/Shanghai
+    depends_on:
+      # 等待依赖服务健康后才启动，避免连接失败
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      # 检查后端是否能正常响应 HTTP 请求
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s    # JVM 启动需要时间，前 60 秒不检查
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+          cpus: "1.0"
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+    networks:
+      - simior-net
+
+  # ---- blog-admin 管理后台 ----
+  # 作用：Vue 管理后台，用于管理文章、分类、标签等
+  # 访问地址：http://服务器IP/admin
+  blog-admin:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.admin
+    container_name: simior-admin
+    restart: always
+    depends_on:
+      - blog-server     # 依赖后端服务
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+          cpus: "0.25"
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
+    networks:
+      - simior-net
+
+  # ---- blog-web 前台 ----
+  # 作用：Next.js 前台，展示博客文章给访客看
+  # 访问地址：http://服务器IP/
+  blog-web:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.web
+    container_name: simior-web
+    restart: always
+    env_file:
+      - ../../blog-web/.env
+      - ../../blog-web/.env.production
+    environment:
+      TZ: Asia/Shanghai
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "0.5"
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
+    networks:
+      - simior-net
+
+  # ==========================================
+  # 网关入口
+  # ==========================================
+
+  # ---- Nginx 反向代理 ----
+  # 作用：统一入口，根据 URL 路径分发到不同服务
+  #   /       → blog-web（前台）
+  #   /admin  → blog-admin（管理后台）
+  #   /api/   → blog-server（后端 API）
+  nginx:
+    image: nginx:latest
+    container_name: simior-nginx
+    restart: always
+    ports:
+      # 80 端口是 HTTP 默认端口，浏览器访问时不用加端口号
+      - "${NGINX_PORT:-80}:80"
+    volumes:
+      # 挂载 Nginx 配置文件（只读）
+      - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - blog-server
+      - blog-admin
+      - blog-web
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+          cpus: "0.25"
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
+    networks:
+      - simior-net
+
+# ==========================================
+# 数据卷定义（持久化存储）
+# 容器删除后数据仍保留在宿主机上
+# ==========================================
+volumes:
+  mysql-data:     # MySQL 数据
+  redis-data:     # Redis 数据
+  minio-data:     # MinIO 文件
+
+# ==========================================
+# 网络定义（容器间通信）
+# 所有服务加入同一个网络，可以用容器名互相访问
+# 例如：blog-server 连接 mysql，直接写 mysql:3306
+# ==========================================
+networks:
+  simior-net:
+    driver: bridge

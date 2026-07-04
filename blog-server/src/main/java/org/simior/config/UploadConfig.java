@@ -37,7 +37,7 @@ public class UploadConfig {
      */
     @Bean
     @ConditionalOnProperty(name = "blog.upload.mode", havingValue = "oss")
-    public OSS ossClient(UploadProperties uploadProperties) {
+    public OSS ossClient() {
         return new OSSClientBuilder().build(
                 uploadProperties.getOss().getEndpoint(),
                 uploadProperties.getOss().getAccessKeyId(),

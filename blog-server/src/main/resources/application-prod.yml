@@ -1,35 +1,52 @@
-# Production environment configuration
+# ============================================
+# 生产环境配置（Docker 部署）
+#
+# 用法：Docker 启动时通过 SPRING_PROFILES_ACTIVE=prod 激活
+# 数据库地址：从环境变量读取（由 docker-compose.yml 传入）
+#
+# 变量说明（全部从 .env 文件读取）：
+#   DB_HOST        = MySQL 容器名（docker 内部 DNS 解析）
+#   DB_PORT        = MySQL 端口（3306）
+#   DB_USERNAME    = 数据库用户名
+#   DB_PASSWORD    = 数据库密码
+#   REDIS_HOST     = Redis 容器名
+#   REDIS_PORT     = Redis 端口
+#   REDIS_PASSWORD = Redis 密码
+#   MINIO_ENDPOINT = MinIO 地址
+#   MINIO_ACCESS_KEY = MinIO 访问密钥
+#   MINIO_SECRET_KEY = MinIO 密钥
+# ============================================
+
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:${MYSQL_PORT:3306}/simior-blog?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
-    username: ${MYSQL_USERNAME}
-    password: ${MYSQL_PASSWORD}
+    # 动态拼接数据库地址（从环境变量读取）
+    # 例：jdbc:mysql://mysql:3306/simior-blog
+    url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/simior-blog?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    # 未设置环境变量时的默认密码（仅用于首次部署时的快速测试）
+    password: ${DB_PASSWORD:Sb7kL9xQ2wR}
 
   data:
     redis:
-      host: ${REDIS_HOST}
+      host: ${REDIS_HOST:127.0.0.1}      # Redis 容器名
       port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD}
-      database: 0
+      password: ${REDIS_PASSWORD:}        # 无密码
 
 mybatis-plus:
   configuration:
+    # 生产环境不打印 SQL（避免日志过多 + 信息泄露）
     log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
 
 logging:
   level:
-    root: warn
-    org.simior: info
+    root: warn          # 只记录警告和错误
+    org.simior: info    # 博客项目记录常规操作
 
 blog:
-  cors:
-    allowed-origins: ${CORS_ALLOWED_ORIGINS:}
   upload:
-    # 如果用本地 Docker 的 MinIO，这里要改为 minio
-    mode: minio
     minio:
+      # MinIO 地址（Docker 内部用容器名访问）
       endpoint: ${MINIO_ENDPOINT:http://127.0.0.1:9000}
-      access-key: ${MINIO_ACCESS_KEY}
-      secret-key: ${MINIO_SECRET_KEY}
-      bucket-name: simior-blog
+      access-key: ${MINIO_ACCESS_KEY:admin}
+      secret-key: ${MINIO_SECRET_KEY:mK3pL8vN5qT}

@@ -1,52 +1,85 @@
+# ============================================
+# Spring Boot 公共配置（dev 和 prod 共用）
+#
+# 文件结构：
+#   application.yml       ← 当前文件（公共配置）
+#   application-dev.yml   ← 开发环境（本地运行）
+#   application-prod.yml  ← 生产环境（Docker 部署）
+#
+# 配置优先级：prod/dev > application.yml（后面的覆盖前面的）
+# ============================================
+
 server:
-  port: 8080
+  port: 8080                # 后端监听端口
   servlet:
-    context-path: /
+    context-path: /         # 根路径（通过 Nginx 反向代理访问）
 
 spring:
+  # 默认激活 dev 环境，生产环境通过 SPRING_PROFILES_ACTIVE=prod 覆盖
   profiles:
     active: dev
 
-  # 文件上传限制
+  # 文件上传限制（与 nginx.conf 的 client_max_body_size 一致）
   servlet:
     multipart:
-      max-file-size: 50MB # 单个上传文件最大 50MB
-      max-request-size: 50MB # 总上传文件最大 50MB
+      max-file-size: 50MB       # 单个文件最大 50MB
+      max-request-size: 50MB    # 一次请求总大小最大 50MB
 
-  # Jackson 全局配置
+  # Jackson JSON 序列化配置
   jackson:
-    date-format: yyyy-MM-dd HH:mm:ss
-    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss   # 日期格式
+    time-zone: GMT+8                    # 时区（北京时间）
 
-# mybatis-plus
+# ============================================
+# MyBatis-Plus 配置
+# ============================================
 mybatis-plus:
+  # 实体类包路径（自动扫描）
   type-aliases-package: org.simior.model.entity
   configuration:
-    map-underscore-to-camel-case: true # 驼峰命名
-    default-enum-type-handler: com.baomidou.mybatisplus.core.handlers.MybatisEnumTypeHandler # 枚举
+    # 数据库下划线命名 → Java 驼峰命名
+    # 例如：user_name → userName
+    map-underscore-to-camel-case: true
+    # 枚举类型处理器（数据库存数字，Java 用枚举）
+    default-enum-type-handler: com.baomidou.mybatisplus.core.handlers.MybatisEnumTypeHandler
   global-config:
     db-config:
-      id-type: auto # 主键自增
-      update-strategy: not_null # 更新策略: 只更新非空字段
-      logic-delete-field: deleted # 逻辑删除字段, 默认为del_flag, 字段类型可以为boolean或者Integer
-      logic-delete-value: 1 # 逻辑已删除字段值(默认为1)
-      logic-not-delete-value: 0 # 逻辑未删除字段值(默认为0)
+      id-type: auto           # 主键自增策略
+      # 更新策略：只更新非 null 的字段
+      # 例如：更新文章时只传了 title，不会把 content 覆盖为 null
+      update-strategy: not_null
+      # 逻辑删除配置（不真正删除数据，只标记为已删除）
+      logic-delete-field: deleted      # 字段名
+      logic-delete-value: 1            # 已删除 = 1
+      logic-not-delete-value: 0        # 未删除 = 0
 
-# Sa-Token 配置
+# ============================================
+# Sa-Token 权限认证配置
+# ============================================
 sa-token:
-  token-name: Authorization # token 名称（同时也是 cookie 名称）
-  timeout: 2592000  # token 有效期（单位：秒） 默认30天，-1 代表永久有效
-  token-style: simple-uuid # token 风格（默认可取值：uuid、simple-uuid、random-32、random-64、random-128、tik）
-  is-read-cookie: false # 是否从 Cookie 中读取 token
-  is-write-header: true # 是否将 token 写入响应头
-  token-prefix: Bearer # 指定 token 提交时的前缀
+  token-name: Authorization      # Token 放在请求头里
+  timeout: 2592000               # Token 有效期：30 天（秒）
+  token-style: simple-uuid       # Token 生成风格
+  is-read-cookie: false          # 不从 Cookie 读取 Token
+  is-write-header: true          # 把 Token 写入响应头
+  token-prefix: Bearer           # 请求头格式：Bearer xxx
 
-
+# ============================================
+# 博客业务配置（从环境变量读取）
+# ============================================
 blog:
-  # 文件上传配置
+  cors:
+    # 跨域允许的来源（* = 允许所有）
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:}
   upload:
-    mode: minio # 上传模式：minio 或 oss
+    # 上传模式：minio（本地存储）或 oss（阿里云）
+    mode: ${BLOG_UPLOAD_MODE:minio}
+    minio:
+      bucket-name: simior-blog   # MinIO 存储桶名称
 
+# ============================================
+# 日志配置
+# ============================================
 logging:
   level:
-    root: info
+    root: info                    # 默认日志级别（info = 记录常规操作）
