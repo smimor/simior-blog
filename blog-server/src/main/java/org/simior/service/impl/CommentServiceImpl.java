@@ -122,8 +122,9 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, BlogComment> 
                 commentLikeMapper.insert(like);
                 commentMapper.incrementLikeCount(commentId);
             }
+        } finally {
+            // 不移除锁条目，避免竞态条件
         }
-        // 不移除锁条目，避免竞态条件
     }
 
     @Override
@@ -150,8 +151,9 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, BlogComment> 
                     commentMapper.decrementLikeCount(commentId);
                 }
             }
+        } finally {
+            // 不移除锁条目，避免竞态条件
         }
-        // 不移除锁条目，避免竞态条件
     }
 
     @Override

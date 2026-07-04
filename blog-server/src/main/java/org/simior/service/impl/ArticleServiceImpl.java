@@ -373,8 +373,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> 
                 // 原子更新文章点赞数
                 articleMapper.incrementLikeCount(articleId);
             }
+        } finally {
+            // 不移除锁条目，避免竞态条件
         }
-        // 不移除锁条目，避免竞态条件
     }
 
     @Override
@@ -407,8 +408,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> 
                 // 原子更新文章点赞数
                 articleMapper.decrementLikeCount(articleId);
             }
+        } finally {
+            // 不移除锁条目，避免竞态条件
         }
-        // 不移除锁条目，避免竞态条件
     }
 
     @Override
@@ -444,8 +446,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> 
                 // 原子更新文章收藏数
                 articleMapper.incrementCollectCount(articleId);
             }
+        } finally {
+            // 不移除锁条目，避免竞态条件
         }
-        // 不移除锁条目，避免竞态条件
     }
 
     @Override
@@ -478,8 +481,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> 
                 // 原子更新文章收藏数
                 articleMapper.decrementCollectCount(articleId);
             }
+        } finally {
+            // 不移除锁条目，避免竞态条件
         }
-        // 不移除锁条目，避免竞态条件
     }
 
     @Override
