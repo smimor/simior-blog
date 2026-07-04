@@ -45,6 +45,12 @@ public class ArticleDTO {
     private String content;
 
     /**
+     * HTML 内容（由后端渲染 Markdown 生成）
+     */
+    @Size(max = 200000, message = "HTML内容不能超过200000个字符")
+    private String htmlContent;
+
+    /**
      * 分类ID
      */
     private Long categoryId;

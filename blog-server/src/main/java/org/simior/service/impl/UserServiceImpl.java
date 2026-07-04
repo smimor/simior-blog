@@ -64,6 +64,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, SysUser> implements
         user.setEmail(dto.getEmail());
         user.setPhone(dto.getPhone());
         user.setStatus(dto.getStatus() != null ? dto.getStatus() : 1);
+        user.setRoleId(dto.getRoleId());
 
         save(user);
         return user.getId();

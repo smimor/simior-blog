@@ -149,6 +149,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> 
         if (articleDTO.getContent() != null) {
             article.setContent(articleDTO.getContent());
         }
+        if (articleDTO.getHtmlContent() != null) {
+            article.setHtmlContent(articleDTO.getHtmlContent());
+        }
         if (articleDTO.getCategoryId() != null) {
             article.setCategoryId(articleDTO.getCategoryId());
         }
@@ -370,9 +373,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> 
                 // 原子更新文章点赞数
                 articleMapper.incrementLikeCount(articleId);
             }
-        } finally {
-            LOCK_MAP.remove(lockKey);
         }
+        // 不移除锁条目，避免竞态条件
     }
 
     @Override
@@ -405,9 +407,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> 
                 // 原子更新文章点赞数
                 articleMapper.decrementLikeCount(articleId);
             }
-        } finally {
-            LOCK_MAP.remove(lockKey);
         }
+        // 不移除锁条目，避免竞态条件
     }
 
     @Override
@@ -443,9 +444,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> 
                 // 原子更新文章收藏数
                 articleMapper.incrementCollectCount(articleId);
             }
-        } finally {
-            LOCK_MAP.remove(lockKey);
         }
+        // 不移除锁条目，避免竞态条件
     }
 
     @Override
@@ -478,9 +478,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> 
                 // 原子更新文章收藏数
                 articleMapper.decrementCollectCount(articleId);
             }
-        } finally {
-            LOCK_MAP.remove(lockKey);
         }
+        // 不移除锁条目，避免竞态条件
     }
 
     @Override
@@ -501,6 +500,18 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> 
         // 记录客户端 IP 地址
         String clientIp = getClientIp();
         viewHistory.setIpAddress(clientIp);
+
+        // 浏览量去重：同一 IP 对同一文章 24 小时内只计一次
+        LambdaQueryWrapper<BlogViewHistory> dedupWrapper = new LambdaQueryWrapper<>();
+        dedupWrapper.eq(BlogViewHistory::getArticleId, articleId)
+                .eq(BlogViewHistory::getIpAddress, clientIp)
+                .ge(BlogViewHistory::getCreateTime, java.time.LocalDateTime.now().minusHours(24));
+        Long recentViews = viewHistoryMapper.selectCount(dedupWrapper);
+        if (recentViews > 0) {
+            // 24 小时内已有浏览记录，只插入历史不递增浏览量
+            viewHistoryMapper.insert(viewHistory);
+            return;
+        }
 
         viewHistoryMapper.insert(viewHistory);
 

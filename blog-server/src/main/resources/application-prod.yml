@@ -22,10 +22,9 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     # 动态拼接数据库地址（从环境变量读取）
     # 例：jdbc:mysql://mysql:3306/simior-blog
-    url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/simior-blog?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
-    username: ${DB_USERNAME:root}
-    # 未设置环境变量时的默认密码（仅用于首次部署时的快速测试）
-    password: ${DB_PASSWORD:Sb7kL9xQ2wR}
+    url: jdbc:mysql://${DB_HOST:?请设置DB_HOST}:${DB_PORT:3306}/simior-blog?useUnicode=true&characterEncoding=utf-8&useSSL=true&requireSSL=true&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:?请设置DB_USERNAME}
+    password: ${DB_PASSWORD:?请设置DB_PASSWORD}
 
   data:
     redis:
@@ -47,6 +46,6 @@ blog:
   upload:
     minio:
       # MinIO 地址（Docker 内部用容器名访问）
-      endpoint: ${MINIO_ENDPOINT:http://127.0.0.1:9000}
-      access-key: ${MINIO_ACCESS_KEY:admin}
-      secret-key: ${MINIO_SECRET_KEY:mK3pL8vN5qT}
+      endpoint: ${MINIO_ENDPOINT:?请设置MINIO_ENDPOINT}
+      access-key: ${MINIO_ACCESS_KEY:?请设置MINIO_ACCESS_KEY}
+      secret-key: ${MINIO_SECRET_KEY:?请设置MINIO_SECRET_KEY}

@@ -52,4 +52,9 @@ public class UserCreateDTO {
      * 状态 0-禁用 1-启用（默认启用）
      */
     private Integer status;
+
+    /**
+     * 角色ID（必填，决定用户权限）
+     */
+    private Long roleId;
 }

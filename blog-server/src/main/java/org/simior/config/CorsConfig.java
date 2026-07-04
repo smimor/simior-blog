@@ -20,9 +20,10 @@ public class CorsConfig {
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // 根据配置决定是否允许特定域名，开发环境默认允许所有
+        // 根据配置决定是否允许特定域名
+        // 生产环境必须显式配置允许的来源，未配置时拒绝所有跨域请求
         if (allowedOrigins == null || allowedOrigins.isBlank()) {
-            config.addAllowedOriginPattern("*");
+            config.addAllowedOriginPattern("http://localhost:*");
         } else {
             for (String origin : allowedOrigins.split(",")) {
                 config.addAllowedOriginPattern(origin.trim());

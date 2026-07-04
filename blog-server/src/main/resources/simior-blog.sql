@@ -330,7 +330,7 @@ values (1, 2, '写得真好,学习了!', 5),
        (2, 2, 'Vue3确实很强大', 8);
 -- 插入二级评论
 insert into `blog_comment` (`article_id`, `user_id`, `parent_id`, `reply_user_id`, `content`, `like_count`)
-values (1, 2, 1, 3, '谢谢支持!', 2);
+values (1, 2, 1, 2, '谢谢支持!', 2);
 
 
 -- 评论点赞表

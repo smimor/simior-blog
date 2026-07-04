@@ -88,7 +88,7 @@ public class FileController {
             return Result.error("文件名不能为空");
         }
         String lowerName = originalFilename.toLowerCase();
-        if (!lowerName.matches(".*\\.(jpg|jpeg|png|gif|bmp|webp|svg|ico)$")) {
+        if (!lowerName.matches(".*\\.(jpg|jpeg|png|gif|bmp|webp|ico)$")) {
             return Result.error("不支持的图片格式");
         }
         long maxSize = (long) maxMB * 1024 * 1024;
@@ -120,7 +120,8 @@ public class FileController {
                     + "." + uploadProperties.getOss().getEndpoint() + "/";
             return fileUrl.startsWith(expectedHost);
         } else if ("local".equals(mode)) {
-            return !fileUrl.contains("..");
+            // 本地模式：校验路径不包含 .. 且以预期前缀开头
+            return !fileUrl.contains("..") && fileUrl.startsWith("/uploads/");
         }
         return false;
     }

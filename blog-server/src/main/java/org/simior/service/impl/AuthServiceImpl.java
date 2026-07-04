@@ -123,7 +123,7 @@ public class AuthServiceImpl implements AuthService {
                 return buildLoginVO(user);
             }
         } finally {
-            REGISTER_LOCKS.remove(lockKey);
+            // 不移除锁条目，避免竞态条件（新线程获取不同锁对象）
         }
     }
 

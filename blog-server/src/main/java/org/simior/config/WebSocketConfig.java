@@ -28,7 +28,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(myWebSocketHandler, "/ws/{sid}")
                 .addInterceptors(new AuthHandshakeInterceptor())
-                .setAllowedOriginPatterns("*"); // 生产环境建议指定具体域名
+                .setAllowedOriginPatterns("http://localhost:*", "http://127.0.0.1:*"); // 仅允许本地来源，生产环境通过 Nginx 代理
     }
 
     /**

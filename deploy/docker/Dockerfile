@@ -30,10 +30,13 @@ RUN cd blog-server && ./mvnw package -DskipTests -q -s .mvn/settings.xml
 FROM eclipse-temurin:latest
 LABEL maintainer="simior"
 
+# 创建非 root 用户运行应用
+RUN addgroup --system app && adduser --system --ingroup app app
+
 WORKDIR /app
 
 # 从构建阶段复制编译好的 jar 包
-COPY --from=builder /app/blog-server/target/*.jar app.jar
+COPY --from=builder --chown=app:app /app/blog-server/target/*.jar app.jar
 
 # JVM 参数：
 #   -Xms256m  = 初始堆内存 256MB
@@ -42,6 +45,8 @@ COPY --from=builder /app/blog-server/target/*.jar app.jar
 ENV JAVA_OPTS="-Xms256m -Xmx512m -XX:+UseG1GC"
 
 EXPOSE 8080
+
+USER app
 
 # 启动命令：
 #   $JAVA_OPTS    = 上面定义的 JVM 参数

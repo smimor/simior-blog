@@ -63,6 +63,10 @@ sa-token:
   is-read-cookie: false          # 不从 Cookie 读取 Token
   is-write-header: true          # 把 Token 写入响应头
   token-prefix: Bearer           # 请求头格式：Bearer xxx
+  cookie:
+    http-only: true              # 防止 JavaScript 访问 Cookie
+    secure: true                 # 仅 HTTPS 传输 Cookie
+    same-site: strict            # 防止 CSRF 攻击
 
 # ============================================
 # 博客业务配置（从环境变量读取）

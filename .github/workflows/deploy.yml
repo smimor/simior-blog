@@ -14,7 +14,7 @@
 #   1. 在 GitHub 仓库 Settings > Secrets 中添加：
 #      - SERVER_HOST: 服务器 IP
 #      - SERVER_USER: SSH 用户名（root）
-#      - SERVER_PASSWORD: SSH 密码
+#      - SSH_PRIVATE_KEY: SSH 私钥
 # ============================================
 
 name: 自动部署
@@ -39,15 +39,15 @@ jobs:
     steps:
       # 第 1 步：检出代码
       - name: 检出代码
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       # 第 2 步：SSH 部署到服务器
       - name: 部署到服务器
-        uses: appleboy/ssh-action@v1
+        uses: appleboy/ssh-action@057eff1234e9d73275ce51ed3895c11f07dd0f1b # v1.1.0
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
-          password: ${{ secrets.SERVER_PASSWORD }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             # ============================================
             # 自动部署脚本（在服务器上执行）

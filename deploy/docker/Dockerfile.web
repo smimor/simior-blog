@@ -32,6 +32,10 @@ RUN cd blog-web && npm run build
 # 不需要 Nginx，自带 HTTP 服务器
 FROM node:latest
 LABEL maintainer="simior"
+
+# 创建非 root 用户
+RUN addgroup --system app && adduser --system --ingroup app app
+
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -46,6 +50,8 @@ COPY --from=builder /app/blog-web/.next/static ./.next/static
 COPY --from=builder /app/blog-web/public ./public
 
 EXPOSE 3000
+
+USER app
 
 # 启动 Next.js standalone 服务器
 CMD ["node", "server.js"]
