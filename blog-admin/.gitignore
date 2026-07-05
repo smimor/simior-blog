@@ -24,12 +24,6 @@ dist-ssr
 *.sln
 *.sw?
 
-# Dependency directories
-pnpm-lock.yaml
-pnpm-workspace.yaml
-package-lock.json
-yarn.lock
-
 # Auto-generated files
 src/types/import/auto-imports.d.ts
 src/types/import/components.d.ts

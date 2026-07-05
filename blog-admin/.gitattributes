@@ -1,0 +1,3 @@
+*.html linguist-detectable=false
+*.vue linguist-detectable=true
+* text=auto eol=lf

@@ -35,8 +35,8 @@ export default defineConfig(({ mode }: { mode: string }) => {
       // 自动按需导入 API
       AutoImport({
         imports: ['vue', 'vue-router', 'pinia', '@vueuse/core'],
-        dts: 'src/types/import/auto-imports.d.ts',
         resolvers: [ElementPlusResolver()],
+        dts: 'src/types/import/auto-imports.d.ts',
         eslintrc: {
           enabled: true,
           filepath: './.eslintrc-auto-import.json',
@@ -102,6 +102,25 @@ export default defineConfig(({ mode }: { mode: string }) => {
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, '')
         }
+      }
+    },
+    build: {
+      outDir: 'dist',
+      chunkSizeWarningLimit: 2000,
+      rolldownOptions: {
+        output: {
+          minify: {
+            compress: {
+              dropConsole: env.VITE_DROP_CONSOLE === 'true'
+            }
+          }
+        }
+        // 动态路由组件按需加载相关
+        // （原esbuild.drop方式与terser方式均已被此替代）
+      },
+      dynamicImportVarsOptions: {
+        exclude: [],
+        include: ['src/views/**/*.vue']
       }
     }
   }

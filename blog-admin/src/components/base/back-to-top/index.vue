@@ -1,7 +1,7 @@
 <script setup lang="ts">
-  import { useCommon } from '@/hooks/core/useCommon'
+import {useCommon} from '@/hooks/core/useCommon'
 
-  defineOptions({ name: 'ArtBackToTop' })
+defineOptions({ name: 'BackToTop' })
 
   const { scrollToTop } = useCommon()
 
