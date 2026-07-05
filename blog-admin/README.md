@@ -38,7 +38,6 @@
 | `@vue/tsconfig`                    | Vue 官方 TypeScript 配置预设，提供推荐的 TS 编译配置。                       |
 | `eslint`                           | JavaScript、TypeScript、Vue 代码静态检查工具，用于规范代码质量。                |
 | `eslint-config-prettier`           | 关闭 ESLint 中与 Prettier 冲突的格式化规则，避免重复检查。                      |
-| `eslint-plugin-prettier`           | 将 Prettier 格式化规则集成到 ESLint 中，格式问题可直接作为 ESLint 错误提示。         |
 | `eslint-plugin-vue`                | Vue 官方 ESLint 插件，支持检查 `.vue` 单文件组件代码规范。                     |
 | `globals`                          | 提供浏览器、Node.js 等运行环境的全局变量声明，配合 ESLint Flat Config 使用。        |
 | `prettier`                         | 代码格式化工具，统一代码风格，如缩进、引号、换行等。                                  |

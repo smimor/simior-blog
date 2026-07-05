@@ -3,6 +3,7 @@ import { Delete, Edit, Hide, Search } from '@element-plus/icons-vue'
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { articleApi, categoryApi, tagApi } from '@/api'
+import dayjs from 'dayjs'
 
 // 获取全部文章信息
 import { useArticle } from './composables/article.ts'
@@ -22,6 +23,9 @@ const router = useRouter()
   const tagList = ref<{ label: string; value: number }[]>([])
   const categoryList = ref<{ label: string; value: number }[]>([])
 
+  const formatDate = (date: string) => {
+    return dayjs(date).format('YYYY-MM-DD HH:mm')
+  }
   /** 加载标签和分类选项 */
   const loadOptions = async () => {
     try {
@@ -178,7 +182,9 @@ const router = useRouter()
           <BlogImage :src="row.coverImage"></BlogImage>
         </template>
       </el-table-column>
-      <el-table-column prop="createTime" label="发布日期" width="180" />
+      <el-table-column prop="createTime" label="发布日期" width="180">
+        <template #default="{ row }"> {{ formatDate(row.createTime) }} </template>
+      </el-table-column>
       <el-table-column fixed="right" label="编辑" min-width="180">
         <template #default="{ row }">
           <el-button
