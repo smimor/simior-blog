@@ -8,8 +8,6 @@ import '@/styles/index.scss' // 样式
 import { setupGlobDirectives } from '@/directives' // 指令
 import { setupErrorHandle } from '@/utils/sys/error-handle.ts' // 全局错误处理
 
-document.addEventListener('touchstart', function () {}, { passive: false })
-
 const app = createApp(App)
 initStore(app)
 initRouter(app)

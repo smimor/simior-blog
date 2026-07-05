@@ -78,6 +78,9 @@ export default defineConfig(({ mode }: { mode: string }) => {
       postcss: {
         plugins: [
           {
+            // Tailwind CSS 与 Sass 混合编译后，产物中可能出现多个 @charset 声明，
+            // 浏览器/构建工具要求 @charset 必须是文件第一条规则，否则会报警告。
+            // 该插件用于统一移除所有 @charset 声明（文件默认按UTF-8处理，移除不影响编码）。
             postcssPlugin: 'internal:charset-removal',
             AtRule: {
               charset: (atRule) => {
