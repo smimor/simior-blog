@@ -108,10 +108,11 @@ export function useTheme() {
  */
 export function initializeTheme() {
   const settingStore = useSettingStore()
-
+  const { switchThemeStyles } = useTheme()
   // 设置主题颜色
   setElementThemeColor(settingStore.systemThemeColor)
 
+  switchThemeStyles(settingStore.systemThemeMode)
   // 设置圆角
   document.documentElement.style.setProperty('--custom-radius', `${settingStore.customRadius}rem`)
 }
