@@ -94,7 +94,7 @@ export default defineConfig(({ mode }: { mode: string }) => {
       }
     },
     server: {
-      port: Number(VITE_PORT), // 配置前端项目启动端port
+      port: Number(VITE_PORT),
       host: true, // 允许局域网访问
       proxy: {
         '/api': {

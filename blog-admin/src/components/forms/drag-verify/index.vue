@@ -41,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-  defineOptions({ name: 'ArtDragVerify' })
+  defineOptions({ name: 'DragVerify' })
 
   // 事件定义
   const emit = defineEmits(['handlerMove', 'update:value', 'passCallback'])

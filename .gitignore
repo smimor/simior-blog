@@ -3,6 +3,9 @@
 !.env.example
 **/.env
 !**/.env.example
+!blog-admin/.env
+!blog-admin/.env.development
+!blog-admin/.env.production
 !blog-web/.env
 !blog-web/.env.development
 !blog-web/.env.production
