@@ -128,6 +128,7 @@ bash deploy/scripts/deploy.sh
 | `http://<your-server-ip>:9001` | MinIO 控制台 |
 
 默认管理员：`admin / 123456`
+服务ip地址：`115.159.54.200`
 
 ---
 

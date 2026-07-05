@@ -166,7 +166,7 @@ html.dark {
 /* View Transition 相关样式 */
 ::view-transition-new(root),
 ::view-transition-old(root) {
-    animation: none;
+    animation: none !important;
 }
 
 .dark::view-transition-old(root) {
