@@ -75,11 +75,14 @@ services:
       - "${REDIS_PORT_EXPOSE:-}:6379"
     volumes:
       - redis-data:/data
+    # 注意：command 用 > 折叠块时，行内 # 注释会被当作命令的一部分传给
+    # redis-server（YAML 折叠块不识别注释），导致 # 被当成配置文件路径而启动
+    # 失败。所以这里只写纯命令，说明放在上面注释里。
     command: >
       redis-server
-      --appendonly yes          # 开启 AOF 持久化，重启后数据不丢失
-      --maxmemory 256mb         # 最多使用 256MB 内存
-      --maxmemory-policy allkeys-lru  # 内存满时，自动淘汰最久没用的数据
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
