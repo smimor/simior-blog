@@ -48,6 +48,8 @@ create table `sys_user`
     `update_time` datetime     default current_timestamp on update current_timestamp comment '更新时间',
     primary key (`id`),
     unique KEY `uk_username` (`username`),
+    unique KEY `uk_email` (`email`),
+    unique KEY `uk_phone` (`phone`),
     key `idx_role_id` (`role_id`)
 ) engine = InnoDB
   default charset = utf8mb4 comment '用户表';

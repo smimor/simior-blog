@@ -6,7 +6,11 @@
 *.iws
 *.md
 backups/
-.env
+# 注意：不要写成裸的 ".env"！那样会连 blog-admin/.env（无敏感信息，
+# Vite 生产构建时 loadEnv 需要读取它）也一起排除掉，导致 VITE_ACCESS_MODE
+# 等变量在构建产物里变成 undefined。这里只精确排除真正装敏感信息的
+# deploy/.env（数据库/MinIO 密码等，构建镜像完全不需要它）。
+deploy/.env
 blog-admin/.idea
 blog-admin/node_modules
 blog-admin/dist

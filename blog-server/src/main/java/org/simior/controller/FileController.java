@@ -1,6 +1,7 @@
 package org.simior.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.dev33.satoken.annotation.SaCheckRole;
 import lombok.RequiredArgsConstructor;
 import org.simior.common.result.Result;
 import org.simior.properties.UploadProperties;
@@ -53,7 +54,7 @@ public class FileController {
      * @param fileUrl 文件地址
      * @return 删除结果
      */
-    @SaCheckLogin
+    @SaCheckRole("admin")
     @DeleteMapping
     public Result<String> deleteFile(@RequestParam String fileUrl) {
         if (!isValidFileUrl(fileUrl)) {

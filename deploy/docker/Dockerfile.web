@@ -9,14 +9,17 @@
 # ============================================
 
 # ---- 第 1 步：编译构建 ----
-FROM node:latest AS builder
+# 钉死大版本号，避免 node:latest 未来大版本升级悄悄弄坏构建
+FROM node:22-slim AS builder
 WORKDIR /app
 
-# 复制 package.json
-COPY blog-web/package.json blog-web/
+# 复制 package.json + 锁文件（缺一不可，否则锁文件形同虚设）
+COPY blog-web/package.json blog-web/package-lock.json blog-web/
 
 # 安装依赖
-RUN cd blog-web && npm install --registry=https://registry.npmmirror.com
+# npm ci：严格按 package-lock.json 安装，版本与锁文件不一致时直接报错，
+# 而不是像 npm install 那样静默解析出新版本，避免构建结果不可复现
+RUN cd blog-web && npm ci --registry=https://registry.npmmirror.com
 
 # 复制源码并构建
 # Next.js 的 NEXT_PUBLIC_* 变量必须在构建时注入
@@ -30,7 +33,7 @@ RUN cd blog-web && npm run build
 # ---- 第 2 步：运行 ----
 # 使用 standalone 模式：Next.js 会生成一个独立的 Node.js 服务器
 # 不需要 Nginx，自带 HTTP 服务器
-FROM node:latest
+FROM node:22-slim
 LABEL maintainer="simior"
 
 # 创建非 root 用户

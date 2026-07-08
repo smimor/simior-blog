@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
-import { useFullscreen } from '@vueuse/core'
-import { LanguageEnum } from '@/enums/appEnum.ts'
-import { useMenuStore, useSettingStore, useUserStore } from '@/stores'
-import { languageOptions } from '@/locales' // 语言
-import { mittBus } from '@/utils/sys'
-import { themeAnimation } from '@/utils/ui/animation'
-import { useCommon, useHeaderBar } from '@/hooks'
-import UserMenu from './widget/UserMenu.vue'
+  import { useI18n } from 'vue-i18n'
+  import { useFullscreen } from '@vueuse/core'
+  import { LanguageEnum } from '@/enums/appEnum.ts'
+  import { useMenuStore, useSettingStore, useUserStore } from '@/stores'
+  import { languageOptions } from '@/locales' // 语言
+  import { mittBus } from '@/utils/sys'
+  import { themeAnimation } from '@/utils/ui/animation'
+  import { useCommon, useHeaderBar } from '@/hooks'
+  import UserMenu from './widget/UserMenu.vue'
 
-// 检测操作系统类型
+  // 检测操作系统类型
   const isWindows = navigator.userAgent.includes('Windows')
 
   const { locale } = useI18n()
@@ -176,9 +176,9 @@ import UserMenu from './widget/UserMenu.vue'
 
         <!-- 国际化按钮 -->
         <el-dropdown
-          @command="changeLanguage"
-          popper-class="lang-dropDown-style"
           v-if="shouldShowLanguage"
+          popper-class="lang-dropDown-style"
+          @command="changeLanguage"
         >
           <IconButton icon="ri:translate-2" class="language-btn text-[19px]" />
           <template #dropdown>
@@ -189,7 +189,7 @@ import UserMenu from './widget/UserMenu.vue'
                   :class="{ 'is-selected': locale === item.value }"
                 >
                   <span class="menu-txt">{{ item.label }}</span>
-                  <SvgIcon icon="ri:check-fill" v-if="locale === item.value" />
+                  <SvgIcon v-if="locale === item.value" icon="ri:check-fill" />
                 </el-dropdown-item>
               </div>
             </el-dropdown-menu>
@@ -217,8 +217,8 @@ import UserMenu from './widget/UserMenu.vue'
         <!--主题切换按钮-->
         <IconButton
           v-if="shouldShowThemeToggle"
-          @click="themeAnimation"
           :icon="isDark ? 'ri:sun-fill' : 'ri:moon-line'"
+          @click="themeAnimation"
         ></IconButton>
 
         <!-- 用户头像、菜单 -->

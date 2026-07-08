@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class AuthServiceImpl implements AuthService {
 
     private static final ConcurrentHashMap<String, Object> REGISTER_LOCKS = new ConcurrentHashMap<>();
-
+    private static final String DUMMY_HASH = BCrypt.hashpw("dummy-placeholder");
     private final UserMapper userMapper;
 
     @Override
@@ -41,6 +41,7 @@ public class AuthServiceImpl implements AuthService {
 
         // 2. 校验用户
         if (user == null) {
+            BCrypt.checkpw(loginDTO.getPassword(), DUMMY_HASH); // 消耗与真实校验相同的时间
             throw new BusinessException("用户名或密码错误");
         }
 

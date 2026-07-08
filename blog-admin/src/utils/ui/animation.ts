@@ -42,8 +42,17 @@ let cachedTheme: ReturnType<typeof useTheme> | null = null
  */
 export const themeAnimation = (e: any) => {
   // 懒初始化 composable（确保 Pinia 已就绪）
-  if (!cachedTheme) cachedTheme = useTheme()
-  const { colorMode } = cachedTheme
+  // if (!cachedTheme) cachedTheme = useTheme()
+  // const { colorMode } = cachedTheme
+
+  const x = e.clientX
+  const y = e.clientY
+  // 计算鼠标点击位置距离视窗的最大圆半径
+  const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y))
+
+  document.documentElement.style.setProperty('--vt-x', `${x}px`)
+  document.documentElement.style.setProperty('--vt-y', `${y}px`)
+  document.documentElement.style.setProperty('--vt-r', `${radius}px`)
 
   // 检查浏览器是否支持 View Transitions API
   if (!document.startViewTransition) {
@@ -52,35 +61,8 @@ export const themeAnimation = (e: any) => {
   }
 
   // 主题切换动画
-  const transition = document.startViewTransition(() => {
+  document.startViewTransition(() => {
     toggleTheme()
-  })
-
-  // 自定义动画
-  transition.ready.then(() => {
-    const x = e.clientX
-    const y = e.clientY
-    // 计算鼠标点击位置距离视窗的最大圆半径
-    const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y))
-
-    const clipPath = [
-      // 根据圆心的位置和半径花园
-      `circle(0px at ${x}px ${y}px)`,
-      `circle(${radius}px at ${x}px ${y}px)`
-    ]
-
-    // 触发动画
-    document.documentElement.animate(
-      // { clipPath: isDark.value ? clipPath.reverse() : clipPath },
-      { clipPath: colorMode.value === DARK ? clipPath.reverse() : clipPath },
-      {
-        duration: 500,
-        easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
-        pseudoElement:
-          colorMode.value === DARK ? '::view-transition-old(root)' : '::view-transition-new(root)',
-        fill: 'both' // 设置动画填充
-      }
-    )
   })
 }
 

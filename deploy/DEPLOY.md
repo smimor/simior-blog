@@ -127,8 +127,10 @@ bash deploy/scripts/deploy.sh
 | `http://<your-server-ip>/api/` | 后端 API |
 | `http://<your-server-ip>:9001` | MinIO 控制台 |
 
-默认管理员：`admin / 123456`
-服务ip地址：`115.159.54.200`
+默认管理员：`admin / 123456`（**首次登录后请立即修改密码**，该账号密码是种子数据里的公开默认值）
+
+> 服务器 IP 等具体环境信息不建议写进仓库文档，请自行记录在本地或密码管理器中，
+> 避免随代码一起提交、泄露到 Git 历史。
 
 ---
 
@@ -152,11 +154,11 @@ bash deploy/scripts/deploy.sh
 
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
-| `DB_PASSWORD` | `Sb7kL9xQ2wR` | MySQL 密码 |
+| `DB_PASSWORD` | `CHANGE_ME_DB_PASSWORD` | MySQL 密码 |
 | `DB_PORT_EXPOSE` | 空 | MySQL 端口映射（留空=不暴露） |
 | `REDIS_PORT_EXPOSE` | 空 | Redis 端口映射 |
 | `MINIO_ACCESS_KEY` | `admin` | MinIO 密钥 |
-| `MINIO_SECRET_KEY` | `mK3pL8vN5qT` | MinIO 密码 |
+| `MINIO_SECRET_KEY` | `CHANGE_ME_MINIO_SECRET` | MinIO 密码 |
 | `MINIO_API_PORT` | `9000` | MinIO API 端口 |
 | `MINIO_CONSOLE_PORT` | `9001` | MinIO 控制台端口 |
 | `BLOG_UPLOAD_MODE` | `minio` | 上传模式 |

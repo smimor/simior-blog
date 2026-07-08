@@ -22,12 +22,12 @@ services:
   # 作用：存储博客所有数据（文章、用户、评论等）
   # 首次启动会自动执行 init.sql 导入数据库结构和初始数据
   mysql:
-    image: mysql:latest
+    image: mysql:8.4
     container_name: simior-mysql
     restart: always
     environment:
       # MySQL root 密码，从 .env 文件读取，未设置时使用默认值
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-Sb7kL9xQ2wR}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-CHANGE_ME_DB_PASSWORD}
       # 自动创建的数据库名称
       MYSQL_DATABASE: simior-blog
       # 字符集设为 utf8mb4，支持中文和 emoji 表情
@@ -67,7 +67,7 @@ services:
   # ---- Redis 缓存 ----
   # 作用：缓存热点数据，加速访问（如 session、热门文章）
   redis:
-    image: redis:latest
+    image: redis:7.4-alpine
     container_name: simior-redis
     restart: always
     ports:
@@ -102,13 +102,17 @@ services:
   # 作用：存储上传的文件（文章图片、头像等）
   # 控制台地址：http://服务器IP:9001（用 .env 中的账号密码登录）
   minio:
-    image: minio/minio:latest
+    # 重要提示：MinIO 官方已于 2025 年 10 月宣布不再向 Docker Hub 推送免费镜像，
+    # minio/minio 仓库目前处于 archived 状态，"latest" 实质上已经不再更新，
+    # 后续也不会再有新的安全补丁通过 Docker Hub 分发。这里先钉在归档前最后
+    # 一个稳定版本，长期建议评估自建镜像或迁移到其他可信源（如 quay.io 镜像）。
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
     container_name: simior-minio
     restart: always
     environment:
       # MinIO 管理员账号密码
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-admin}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-mK3pL8vN5qT}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-CHANGE_ME_MINIO_SECRET}
       TZ: Asia/Shanghai
     ports:
       # 9000 = API 端口（程序调用）
@@ -157,7 +161,7 @@ services:
       DB_HOST: mysql          # MySQL 容器名（Docker 内部 DNS 自动解析）
       DB_PORT: 3306
       DB_USERNAME: root
-      DB_PASSWORD: ${DB_PASSWORD:-Sb7kL9xQ2wR}
+      DB_PASSWORD: ${DB_PASSWORD:-CHANGE_ME_DB_PASSWORD}
       # Redis 连接配置
       REDIS_HOST: redis       # Redis 容器名
       REDIS_PORT: 6379
@@ -167,7 +171,7 @@ services:
       # MinIO 连接配置
       MINIO_ENDPOINT: http://minio:9000
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-admin}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-mK3pL8vN5qT}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-CHANGE_ME_MINIO_SECRET}
       # 上传模式：minio 或 oss
       BLOG_UPLOAD_MODE: ${BLOG_UPLOAD_MODE:-minio}
       TZ: Asia/Shanghai
@@ -260,7 +264,7 @@ services:
   #   /admin  → blog-admin（管理后台）
   #   /api/   → blog-server（后端 API）
   nginx:
-    image: nginx:latest
+    image: nginx:1.27-alpine
     container_name: simior-nginx
     restart: always
     ports:

@@ -1,6 +1,5 @@
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import path from 'path'
 import { fileURLToPath } from 'url'
 
 import viteCompression from 'vite-plugin-compression'
@@ -59,12 +58,13 @@ export default defineConfig(({ mode }: { mode: string }) => {
         deleteOriginFile: false // 压缩后是否删除原文件
       })
     ],
-    // 路径别名
+    // 路径别名（统一用 fileURLToPath + import.meta.url 的 ESM 写法，
+    // 不再混用 path.resolve + __dirname 的 CJS 写法）
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
-        '@imgs': resolvePath('src/assets/images'),
-        '@icons': resolvePath('src/assets/icons')
+        '@imgs': fileURLToPath(new URL('./src/assets/images', import.meta.url)),
+        '@icons': fileURLToPath(new URL('./src/assets/icons', import.meta.url))
       }
     },
     css: {
@@ -125,7 +125,3 @@ export default defineConfig(({ mode }: { mode: string }) => {
     }
   }
 })
-
-function resolvePath(paths: string) {
-  return path.resolve(__dirname, paths)
-}

@@ -114,7 +114,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public Result<String> handleException(Exception e) {
         // 只记录异常类型和消息，不记录完整栈追踪（避免泄露敏感信息）
-        log.error("系统异常：{} - {}", e.getClass().getSimpleName(), e.getMessage());
+        log.error("系统异常：{}", e.getMessage(), e);
         return Result.error("系统异常，请联系管理员");
     }
 }
