@@ -13,13 +13,18 @@
 FROM node:22-slim AS builder
 WORKDIR /app
 
-# 复制 package.json + 锁文件（缺一不可，否则锁文件形同虚设）
-COPY blog-web/package.json blog-web/package-lock.json blog-web/
+# 安装 pnpm（blog-web 用 pnpm 管理依赖，与 Dockerfile.admin 保持一致）
+RUN npm install -g pnpm --registry=https://registry.npmmirror.com
+
+# 复制 package.json + pnpm 锁文件 + workspace 配置
+# workspace 配置里的 allowBuilds: sharp 用于放行 sharp 的构建脚本，
+# 缺了它 pnpm 10 默认不运行依赖的构建脚本，Next.js 图片优化会缺失原生二进制
+COPY blog-web/package.json blog-web/pnpm-lock.yaml blog-web/pnpm-workspace.yaml blog-web/
 
 # 安装依赖
-# npm ci：严格按 package-lock.json 安装，版本与锁文件不一致时直接报错，
-# 而不是像 npm install 那样静默解析出新版本，避免构建结果不可复现
-RUN cd blog-web && npm ci --registry=https://registry.npmmirror.com
+# pnpm install --frozen-lockfile：严格按 pnpm-lock.yaml 安装，锁文件与
+# package.json 不一致时直接报错，保证构建可复现（等价于 npm ci）
+RUN cd blog-web && pnpm install --frozen-lockfile --registry=https://registry.npmmirror.com
 
 # 复制源码并构建
 # Next.js 的 NEXT_PUBLIC_* 变量必须在构建时注入
@@ -28,7 +33,7 @@ ARG NEXT_PUBLIC_SITE_NAME=Simior Blog
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_SITE_NAME=$NEXT_PUBLIC_SITE_NAME
 COPY blog-web/ blog-web/
-RUN cd blog-web && npm run build
+RUN cd blog-web && pnpm run build
 
 # ---- 第 2 步：运行 ----
 # 使用 standalone 模式：Next.js 会生成一个独立的 Node.js 服务器
