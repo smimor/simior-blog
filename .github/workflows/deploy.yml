@@ -48,36 +48,37 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           password: ${{ secrets.SERVER_PASSWORD }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          timeout: 30s
           script: |
-            # ============================================
-            # 自动部署脚本（在服务器上执行）
-            #
-            # 注意：这里不再重复手写部署逻辑，统一调用
-            # deploy/scripts/deploy.sh，避免两处脚本各自维护、
-            # 改一处忘改另一处导致行为不一致（比如之前这里手写的
-            # blog-web/.env 生成逻辑，其实 deploy.sh 里根本没有）。
-            # ============================================
-
+            set -e
+            
+            echo "=== 开始部署 ==="
+            echo "当前用户: $(whoami)"
+            echo "当前目录: $(pwd)"
+            
             # 进入项目目录
-            cd /opt/simior-blog
-
+            cd /opt/simior-blog || { echo "错误：项目目录不存在"; exit 1; }
+            echo "进入项目目录: $(pwd)"
+            
             # 拉取最新代码
             echo "拉取最新代码..."
-            git pull origin main
-
+            git pull origin main || { echo "错误：git pull 失败"; exit 1; }
+            
             # 执行统一的部署脚本
+            echo "执行部署脚本..."
             bash deploy/scripts/deploy.sh
-
+            
             # 等待服务启动
             echo "等待服务启动..."
             sleep 30
-
+            
             # 检查服务状态
             echo "服务状态："
             cd deploy/docker && docker compose ps
-
+            
             echo ""
-            echo "部署完成！"
+            echo "=== 部署完成 ==="
             echo "   前台: http://${{ secrets.SERVER_HOST }}/"
             echo "   后台: http://${{ secrets.SERVER_HOST }}/admin"
             echo "   API:  http://${{ secrets.SERVER_HOST }}/api/"

@@ -5,8 +5,8 @@
     "types": ["vite/client", "node", "element-plus/global"],
     "paths": {
       "@/*": ["./src/*"],
-      "@imgs/*": ["src/assets/images/*"],
-      "@icons/*": ["src/assets/icons/*"]
+      "@imgs/*": ["./src/assets/images/*"],
+      "@icons/*": ["./src/assets/icons/*"]
     },
 
     /* Linting */
