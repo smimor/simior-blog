@@ -31,8 +31,9 @@ simior-blog/
 │   │   ├── nginx.conf              # 反向代理入口
 │   │   └── nginx-admin.conf        # blog-admin 容器内部配置
 │   └── scripts/
-│       ├── deploy.sh               # 部署
-│       └── reset-server.sh         # 重置数据
+│       ├── deploy.sh               # 一键部署（自动生成 .env 与随机密码）
+│       ├── reset-server.sh         # 重置数据（仅清空数据卷，保留代码与镜像）
+│       └── uninstall.sh            # 完整卸载（删容器/数据卷/镜像/项目文件夹，保留 Docker/Git）
 └── .github/workflows/deploy.yml    # GitHub Actions 自动部署
 ```
 
@@ -112,11 +113,23 @@ git clone https://github.com/smimor/simior-blog.git
 cd simior-blog
 ```
 
-### 2. 执行部署
+### 2. 一键部署
 
 ```bash
 bash deploy/scripts/deploy.sh
 ```
+
+脚本会自动完成全部操作，**无需手动创建或编辑 `.env`**：
+
+- 检查 `docker` / `git` 是否已安装（未安装会提示回到本文档安装，脚本不代为安装）
+- 从 `.env.example` 生成 `.env`，并自动写入随机强密码（MySQL、MinIO）
+- 构建并启动所有容器
+- 清理构建产生的悬空镜像
+
+部署完成后，终端会打印生成的随机密码，请妥善保存（也可随时在 `deploy/.env` 中查看）。
+若 `.env` 已存在且密码已自定义，脚本会沿用现有配置，不会覆盖。
+
+> 如需重新生成密码：删除 `deploy/.env` 后重跑脚本即可。
 
 ### 3. 访问
 
@@ -176,7 +189,7 @@ docker compose up -d --build
 
 ## 五、重置数据
 
-删除所有容器和数据卷（MySQL、Redis、MinIO 数据全部清空）：
+仅清空数据卷（MySQL、Redis、MinIO 数据全部删除），保留代码与镜像，用于干净地重新部署：
 
 ```bash
 cd /opt/simior-blog
@@ -192,7 +205,21 @@ bash deploy/scripts/deploy.sh
 
 ---
 
-## 六、常用命令
+## 六、完整卸载
+
+清理除 Docker、Git 本身以外的**全部**内容：容器、数据卷、网络、本项目镜像、以及克隆的项目文件夹。
+
+```bash
+cd /opt/simior-blog
+bash deploy/scripts/uninstall.sh
+```
+
+卸载后，项目文件夹会被删除，服务器上仅保留 Docker 与 Git（其卸载方式见下方第七、八节）。
+如需重新部署，先按第二节重新克隆代码再运行部署脚本。
+
+---
+
+## 七、常用命令
 
 ```bash
 cd /opt/simior-blog/deploy/docker
@@ -214,7 +241,7 @@ docker compose down
 
 ---
 
-## 七、卸载 Docker
+## 八、卸载 Docker
 
 ```bash
 systemctl stop docker
@@ -223,7 +250,7 @@ rm -rf /opt/docker
 rm -rf /etc/docker
 ```
 
-## 八、卸载 Git
+## 九、卸载 Git
 
 ```bash
 yum remove -y git
@@ -231,7 +258,7 @@ yum remove -y git
 
 ---
 
-## 九、常见问题
+## 十、常见问题
 
 ### Nginx 502 Bad Gateway
 
@@ -271,7 +298,7 @@ grep DB_PASSWORD ../.env
 
 ---
 
-## 十、端口一览
+## 十一、端口一览
 
 | 服务 | 容器名 | 端口 | 说明 |
 |------|--------|------|------|
