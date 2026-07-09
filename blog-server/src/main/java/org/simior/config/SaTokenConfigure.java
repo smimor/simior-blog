@@ -55,6 +55,7 @@ public class SaTokenConfigure implements WebMvcConfigurer {
                 "/v1/auth/login",
                 "/v1/auth/register",
                 "/v1/auth/check",
+                "/v1/auth/captcha",
                 // 博客公开读取
                 "/v1/banners",
                 "/v1/articles",

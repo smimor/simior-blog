@@ -10,6 +10,18 @@ const BASE_URL = '/v1/auth'
 
 export const authApi = {
   /**
+   * 获取图形验证码
+   *
+   * GET /v1/auth/captcha
+   */
+  getCaptcha() {
+    return request.get<{ captchaId: string; captchaImage: string }>({
+      url: `${BASE_URL}/captcha`,
+      showErrorMessage: false
+    })
+  },
+
+  /**
    * 用户登录
    *
    * POST /v1/auth/login

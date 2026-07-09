@@ -65,7 +65,7 @@ values ('admin', '$2a$10$cHj8oPvn9Uxu4SKdvudTIekwS60aHcQcQ5vql/3Oa0ON2QpnI75gK',
         '13800138002',
         'https://gitee.com/simior/simior-blog/raw/master/avatar.jpg', '喜欢阅读技术文章', 3, 1);
 
--- 用户角色关联表
+-- 用户角色关联表（已废弃：当前使用 sys_user.role_id 字段直接关联角色，此表不再使用）
 drop table if exists `sys_user_role`;
 create table `sys_user_role`
 (

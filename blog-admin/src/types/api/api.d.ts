@@ -64,6 +64,10 @@ declare namespace Api {
     interface LoginParams {
       username: string
       password: string
+      /** 验证码 ID（由 /v1/auth/captcha 接口返回） */
+      captchaId: string
+      /** 用户输入的验证码 */
+      captchaCode: string
     }
 
     /** 登录响应（对应后端 LoginVO） */

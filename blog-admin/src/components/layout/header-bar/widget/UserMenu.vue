@@ -5,6 +5,10 @@ import { useUserStore } from '@/stores'
 
 const userStore = useUserStore()
 
+const displayName = computed(() => {
+  return userStore.userInfo?.nickname || userStore.userInfo?.username || 'Admin'
+})
+
 const handleCommand = (command: string) => {
   if (command === 'logout') {
     userStore.logOut()
@@ -17,8 +21,8 @@ const handleCommand = (command: string) => {
 <template>
   <el-dropdown placement="bottom-end" @command="handleCommand" trigger="click">
     <div class="user-profile">
-      <el-avatar :size="36" :src="avatar" />
-      <span class="user-name">Admin</span>
+      <el-avatar :size="36" :src="userStore.userInfo?.avatar || avatar" />
+      <span class="user-name">{{ displayName }}</span>
       <el-icon class="el-icon--right">
         <ArrowRight />
       </el-icon>

@@ -3,6 +3,9 @@
 #
 # 用法：直接在 IDEA 中运行
 # 数据库地址：localhost（本地的 MySQL/Redis）
+#
+# 密码说明：开发环境提供默认值方便本地调试，生产环境（application-prod.yml）
+#          必须通过环境变量设置，未配置时会启动失败。
 # ============================================
 
 spring:
@@ -12,15 +15,21 @@ spring:
     # localhost = 本地数据库
     # simior-blog = 数据库名（需要手动创建）
     url: jdbc:mysql://localhost:3306/simior-blog?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
-    username: ${DB_USERNAME:root}    # 默认 root
-    password: ${DB_PASSWORD:123456}  # 默认 123456
+    username: ${DB_USERNAME:root}            # 默认 root
+    password: ${DB_PASSWORD:123456}          # 开发环境默认密码，生产环境通过环境变量覆盖
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
 
   data:
     redis:
       host: localhost       # 本地 Redis
       port: 6379
       database: 0           # Redis 数据库编号（0-15）
-      password:             # 无密码
+      password: ${REDIS_PASSWORD:}  # 从环境变量读取，默认无密码
 
 mybatis-plus:
   configuration:
@@ -37,4 +46,4 @@ blog:
     minio:
       endpoint: http://127.0.0.1:9000    # 本地 MinIO 地址
       access-key: ${MINIO_ACCESS_KEY:admin}
-      secret-key: ${MINIO_SECRET_KEY:mK3pL8vN5qT}
+      secret-key: ${MINIO_SECRET_KEY:mK3pL8vN5qT}  # 开发环境默认密码，生产环境通过环境变量覆盖

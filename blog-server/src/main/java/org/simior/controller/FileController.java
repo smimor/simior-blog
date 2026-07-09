@@ -10,6 +10,9 @@ import org.simior.strategy.UploadStrategyFactory;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.net.URI;
+import java.nio.file.Path;
+
 /**
  * 文件上传控制器
  * <p>
@@ -88,9 +91,19 @@ public class FileController {
         if (originalFilename == null || originalFilename.isBlank()) {
             return Result.error("文件名不能为空");
         }
-        String lowerName = originalFilename.toLowerCase();
+        // 清理文件名：去除路径分隔符和特殊字符，防止路径注入
+        String safeName = originalFilename.replaceAll(".*[/\\\\]", "");
+        if (safeName.isBlank()) {
+            return Result.error("文件名不合法");
+        }
+        String lowerName = safeName.toLowerCase();
         if (!lowerName.matches(".*\\.(jpg|jpeg|png|gif|bmp|webp|ico)$")) {
             return Result.error("不支持的图片格式");
+        }
+        // 校验 Content-Type 与扩展名一致性
+        String ext = lowerName.substring(lowerName.lastIndexOf('.') + 1);
+        if (!isContentTypeMatchExtension(contentType, ext)) {
+            return Result.error("文件内容与扩展名不匹配");
         }
         long maxSize = (long) maxMB * 1024 * 1024;
         if (file.getSize() > maxSize) {
@@ -102,7 +115,23 @@ public class FileController {
     }
 
     /**
+     * 校验 Content-Type 与文件扩展名是否一致
+     */
+    private boolean isContentTypeMatchExtension(String contentType, String ext) {
+        return switch (ext) {
+            case "jpg", "jpeg" -> contentType.equals("image/jpeg");
+            case "png" -> contentType.equals("image/png");
+            case "gif" -> contentType.equals("image/gif");
+            case "bmp" -> contentType.equals("image/bmp");
+            case "webp" -> contentType.equals("image/webp");
+            case "ico" -> contentType.equals("image/x-icon") || contentType.equals("image/vnd.microsoft.icon");
+            default -> false;
+        };
+    }
+
+    /**
      * 校验文件 URL 是否属于当前配置的存储服务
+     * 使用 URL 标准化防止编码绕过攻击
      *
      * @param fileUrl 待校验的文件 URL
      * @return 如果 URL 有效且属于当前存储服务返回 {@code true}，否则返回 {@code false}
@@ -111,18 +140,28 @@ public class FileController {
         if (fileUrl == null || fileUrl.isBlank()) {
             return false;
         }
+        // 标准化 URL，防止编码绕过（如 ..%2F 或 %2e%2e/）
+        String normalizedUrl;
+        try {
+            normalizedUrl = URI.create(fileUrl).normalize().toString();
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+        // 双重检查：标准化后的 URL 不应包含路径遍历
+        if (normalizedUrl.contains("..")) {
+            return false;
+        }
         String mode = uploadProperties.getMode();
         if ("minio".equals(mode)) {
             String expectedPrefix = uploadProperties.getMinio().getEndpoint() + "/"
                     + uploadProperties.getMinio().getBucketName() + "/";
-            return fileUrl.startsWith(expectedPrefix);
+            return normalizedUrl.startsWith(expectedPrefix);
         } else if ("oss".equals(mode)) {
             String expectedHost = "https://" + uploadProperties.getOss().getBucketName()
                     + "." + uploadProperties.getOss().getEndpoint() + "/";
-            return fileUrl.startsWith(expectedHost);
+            return normalizedUrl.startsWith(expectedHost);
         } else if ("local".equals(mode)) {
-            // 本地模式：校验路径不包含 .. 且以预期前缀开头
-            return !fileUrl.contains("..") && fileUrl.startsWith("/uploads/");
+            return normalizedUrl.startsWith("/uploads/");
         }
         return false;
     }

@@ -25,6 +25,12 @@ spring:
     url: jdbc:mysql://${DB_HOST:?请设置DB_HOST}:${DB_PORT:3306}/simior-blog?useUnicode=true&characterEncoding=utf-8&useSSL=true&requireSSL=true&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     username: ${DB_USERNAME:?请设置DB_USERNAME}
     password: ${DB_PASSWORD:?请设置DB_PASSWORD}
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
 
   data:
     redis:
@@ -49,3 +55,12 @@ blog:
       endpoint: ${MINIO_ENDPOINT:?请设置MINIO_ENDPOINT}
       access-key: ${MINIO_ACCESS_KEY:?请设置MINIO_ACCESS_KEY}
       secret-key: ${MINIO_SECRET_KEY:?请设置MINIO_SECRET_KEY}
+
+# 生产环境禁用 API 文档（Knife4j/Swagger）
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+knife4j:
+  enable: false
