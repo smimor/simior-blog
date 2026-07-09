@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "vite --open",
-    "build": "vite build && vue-tsc --noEmit",
+    "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "eslint",
     "fix": "eslint --fix",
@@ -54,6 +54,7 @@
     "prettier": "^3.8.4",
     "sass": "^1.101.0",
     "stylelint": "^17.14.0",
+    "stylelint-config-recess-order": "^7.7.0",
     "stylelint-config-recommended-vue": "^1.6.1",
     "stylelint-config-standard-scss": "^17.0.0",
     "typescript": "~6.0.3",

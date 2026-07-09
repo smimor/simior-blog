@@ -1,21 +1,20 @@
 @import 'tailwindcss';
-
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ==================== Light Mode Variables ==================== */
 :root {
     /* Base Colors */
-    --base-color: #ffffff;
+    --base-color: #fff;
     --theme-color: var(--main-color);
 
     /* Theme Colors - OKLCH Format */
-    --brand-primary: oklch(24.691% 0.00645 258.424); /* 主紫色 */
-    --brand-secondary: oklch(0.72 0.19 231.6); /* 次要紫色 */
-    --brand-error: oklch(0.73 0.15 25.3); /* 错误色保持红色 */
-    --brand-info: oklch(0.58 0.03 254.1); /* 信息色使用主紫色 */
-    --brand-success: oklch(0.78 0.17 166.1); /* 成功色保持绿色 */
-    --brand-warning: oklch(0.78 0.14 75.5); /* 警告色保持橙色 */
-    --brand-danger: oklch(0.68 0.22 25.3); /* 危险色保持红色 */
+    --brand-primary: oklch(24.691% 0.00645 258.424deg); /* 主紫色 */
+    --brand-secondary: oklch(72% 0.19 231.6deg); /* 次要紫色 */
+    --brand-error: oklch(73% 0.15 25.3deg); /* 错误色保持红色 */
+    --brand-info: oklch(58% 0.03 254.1deg); /* 信息色使用主紫色 */
+    --brand-success: oklch(78% 0.17 166.1deg); /* 成功色保持绿色 */
+    --brand-warning: oklch(78% 0.14 75.5deg); /* 警告色保持橙色 */
+    --brand-danger: oklch(68% 0.22 25.3deg); /* 危险色保持红色 */
 
     /* Gray Scale - Light Mode */
     --gray-100: #f9fafb;
@@ -29,13 +28,13 @@
     --gray-900: #323251;
 
     /* Border Colors */
-    --card-border: rgba(0, 0, 0, 0.08); /* 卡片边框 */
+    --card-border: rgb(0, 0, 0, 0.08); /* 卡片边框 */
     --default-border: #e2e8ee; /* 默认边框 */
     --default-border-dashed: #dbdfe9; /* 虚线边框 */
 
     /* Background Colors */
     --default-bg-color: #fafbfc; /* 页面背景色 */
-    --default-box-color: #ffffff; /* 默认盒子背景色 */
+    --default-box-color: #fff; /* 默认盒子背景色 */
 
     /* Hover Color */
     --hover-color: #edeff0;
@@ -51,7 +50,7 @@
 /* ==================== Dark Mode Variables ==================== */
 html.dark {
     /* Base Colors */
-    --base-color: #000000;
+    --base-color: #000;
 
     /* Gray Scale - Dark Mode */
     --gray-100: #110f0f;
@@ -65,8 +64,8 @@ html.dark {
     --gray-900: #e3e3e8;
 
     /* Border Colors */
-    --card-border: rgba(255, 255, 255, 0.08); /* 卡片边框 */
-    --default-border: rgba(255, 255, 255, 0.1); /* 默认边框 */
+    --card-border: rgb(255, 255, 255, 0.08); /* 卡片边框 */
+    --default-border: rgb(255, 255, 255, 0.1); /* 默认边框 */
     --default-border-dashed: #363843; /* 虚线边框 */
 
     /* Background Colors */

@@ -35,9 +35,9 @@ const { containerHandlers } = useSettingsHandlers()
 <style scoped lang="scss">
 .container-item {
   display: flex;
+  flex: 1;
   align-items: center;
   justify-content: center;
-  flex: 1;
   height: 4rem;
   margin: 1.25rem 0.875rem 0.875rem 0;
   cursor: pointer;

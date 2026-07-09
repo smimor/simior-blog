@@ -21,8 +21,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
     font-size: 1.25rem;
+    cursor: pointer;
     border-radius: 0.25rem;
     transition: all 0.3s ease;
 

@@ -170,17 +170,17 @@ const router = useRouter()
   .form {
     display: flex;
     flex-direction: column;
-    overflow: hidden;
     height: 100%;
+    overflow: hidden;
 
     .el-form-item:last-child {
       flex: 1;
-      overflow: hidden;
       margin-bottom: 0;
+      overflow: hidden;
 
       :deep(.el-form-item__content) {
-        flex: 1;
         display: flex;
+        flex: 1;
         flex-direction: column;
         overflow: hidden;
       }

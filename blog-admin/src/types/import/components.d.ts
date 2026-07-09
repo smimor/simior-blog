@@ -78,4 +78,7 @@ declare module 'vue' {
     UserMenu: typeof import('./../../components/layout/header-bar/widget/UserMenu.vue')['default']
     WorkTab: typeof import('./../../components/layout/work-tab/index.vue')['default']
   }
+  export interface GlobalDirectives {
+    vLoading: typeof import('element-plus/es')['ElLoadingDirective']
+  }
 }

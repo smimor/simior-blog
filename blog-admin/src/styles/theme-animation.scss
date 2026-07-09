@@ -33,8 +33,9 @@ $bg-animation-duration: 0.5s;
 // 定义动画
 @keyframes clip {
   from {
-    clip-path: circle(0px at var(--vt-x) var(--vt-y));
+    clip-path: circle(0 at var(--vt-x) var(--vt-y));
   }
+
   to {
     clip-path: circle(var(--vt-r) at var(--vt-x) var(--vt-y));
   }

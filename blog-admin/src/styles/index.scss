@@ -1,11 +1,11 @@
 // 应用全局样式
-@use './app.scss';
+@use './app';
 
 // Element Plus 样式优化
-@use './element/el-ui.scss';
+@use './element/el-ui';
 
 // Element Plus 暗黑主题
-@use './element/el-dark.scss';
+@use './element/el-dark';
 
 // 路由切换动画
 @use './router-transition';
@@ -14,7 +14,7 @@
 @use 'md-editor';
 
 // 主题切换圆形扩散动画
-@use './theme-animation.scss';
+@use './theme-animation';
 
 
 

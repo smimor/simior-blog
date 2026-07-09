@@ -141,26 +141,26 @@ const MOBILE_BREAKPOINT = 800
 
 <style lang="scss" scoped>
   .sidebar-scrollbar {
-    background-color: inherit;
     width: 100%;
     height: 100%;
+    background-color: inherit;
   }
 
   .logo-container {
     display: flex;
+    column-gap: 0.675rem;
     align-items: center;
     justify-content: flex-start;
     width: 100%;
     height: 60px;
+    padding-left: 1.375rem;
     overflow: hidden;
     cursor: pointer;
-    padding-left: 1.375rem;
-    column-gap: 0.675rem;
 
     .logo-icon {
+      flex-shrink: 0; // 防止 logo 缩小
       font-size: 2rem;
       color: var(--theme-color);
-      flex-shrink: 0; // 防止 logo 缩小
     }
 
     .logo-title {
@@ -170,26 +170,26 @@ const MOBILE_BREAKPOINT = 800
   }
 
   .sidebar-menu {
-    border-right: none;
     width: 100%;
     height: calc(100vh - 60px);
-    background-color: inherit;
     padding: 0 0.375rem;
+    background-color: inherit;
+    border-right: none;
 
     // 一级菜单项
     :deep(.el-menu-item),
     :deep(.el-sub-menu__title) {
       height: 45px;
-      border-radius: 8px;
       margin-bottom: 8px;
+      border-radius: 8px;
 
       &:hover {
         background-color: var(--hover-color);
       }
 
       &.is-active {
-        background-color: var(--active-color);
         color: var(--theme-color);
+        background-color: var(--active-color);
         box-shadow: inset 3px 0 0 var(--theme-color);
       }
     }

@@ -32,8 +32,8 @@ defineProps({
   height: 100%;
 
   :deep(.el-card__body) {
-    flex: 1;
     display: flex;
+    flex: 1;
     flex-direction: column;
     overflow: hidden;
   }
@@ -41,7 +41,7 @@ defineProps({
 
 .header-content {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
 }
 </style>

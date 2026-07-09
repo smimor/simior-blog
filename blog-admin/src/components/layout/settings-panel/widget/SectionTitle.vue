@@ -16,19 +16,19 @@ defineProps<Props>()
 <style scoped lang="scss">
 .sectionTitle {
   position: relative;
-  text-align: center;
-  color: var(--color-g-800);
   margin-top: 1.875rem;
   margin-bottom: 1.375rem;
   font-size: 0.875rem;
+  color: var(--color-g-800);
+  text-align: center;
 
   &::before,
   &::after {
     position: absolute;
-    content: '';
     top: 10px;
     width: 50px;
     margin: auto;
+    content: '';
     border: 1px solid var(--gray-300);
   }
 

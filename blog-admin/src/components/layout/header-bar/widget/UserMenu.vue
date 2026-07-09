@@ -37,13 +37,13 @@ const handleCommand = (command: string) => {
 <style scoped lang="scss">
 .user-profile {
   display: flex;
-  align-items: center;
   gap: 8px;
+  align-items: center;
   padding: 4px 8px;
-  border-radius: 20px;
   cursor: pointer;
-  transition: all 0.3s ease;
   background: var(--el-fill-color-light);
+  border-radius: 20px;
+  transition: all 0.3s ease;
 
   &:hover {
     background: var(--el-fill-color);

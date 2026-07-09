@@ -148,9 +148,9 @@
       .geo-element {
         position: absolute;
         opacity: 0;
-        animation-fill-mode: forwards;
         animation-duration: 0.8s;
         animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        animation-fill-mode: forwards;
       }
 
       // 动画 mixin
@@ -364,8 +364,8 @@
           background: linear-gradient(to right, #fcbb04, #fffc00);
           border-radius: 50%;
           opacity: 0;
-          transition: all 0.5s;
           transform: translate(-50%, -50%);
+          transition: all 0.5s;
         }
 
         &:hover {
@@ -495,6 +495,7 @@
       width: auto;
       height: auto;
       padding: 0;
+
       // 隐藏背景和其他内容，只保留 logo
       background: transparent;
 
@@ -523,8 +524,8 @@
       .circle-top-right {
         background-color: $bg-mix-light-8;
         box-shadow: 0 0 25px #333 inset;
-        transition: all 0.3s ease-in-out 0.1s;
         rotate: -48deg;
+        transition: all 0.3s ease-in-out 0.1s;
 
         &::before {
           position: absolute;

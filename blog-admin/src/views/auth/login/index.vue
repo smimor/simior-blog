@@ -108,14 +108,14 @@
 </template>
 
 <script setup lang="ts">
-import AppConfig from '@/config'
-import {useSettingStore, useUserStore} from '@/stores'
-import {useI18n} from 'vue-i18n'
-import {HttpError} from '@/utils/http/error'
-import {authApi} from '@/api'
-import {ElNotification, type FormInstance, type FormRules} from 'element-plus'
+  import AppConfig from '@/config'
+  import { useSettingStore, useUserStore } from '@/stores'
+  import { useI18n } from 'vue-i18n'
+  import { HttpError } from '@/utils/http/error'
+  import { authApi } from '@/api'
+  import { ElNotification, type FormInstance, type FormRules } from 'element-plus'
 
-defineOptions({ name: 'Login' })
+  defineOptions({ name: 'Login' })
 
   const settingStore = useSettingStore()
   const { isDark } = storeToRefs(settingStore)
@@ -141,21 +141,21 @@ defineOptions({ name: 'Login' })
     {
       key: 'super',
       label: t('login.roles.super'),
-      username: 'admin',
+      username: 'Super',
       password: '123456',
       roles: ['R_SUPER']
     },
     {
       key: 'admin',
       label: t('login.roles.admin'),
-      username: 'author',
+      username: 'Admin',
       password: '123456',
       roles: ['R_ADMIN']
     },
     {
       key: 'user',
       label: t('login.roles.user'),
-      username: 'user',
+      username: 'User',
       password: '123456',
       roles: ['R_USER']
     }
@@ -187,7 +187,7 @@ defineOptions({ name: 'Login' })
   const loading = ref(false)
 
   onMounted(() => {
-    setupAccount('admin')
+    setupAccount('super')
   })
 
   // 设置账号
@@ -219,7 +219,7 @@ defineOptions({ name: 'Login' })
       const { username, password } = formData
 
       const { token } = await authApi.login({
-        username: username,
+        username,
         password
       })
 
@@ -229,7 +229,7 @@ defineOptions({ name: 'Login' })
       }
 
       // 存储 token 和登录状态
-      userStore.setToken(token)
+      // userStore.setToken(token, refreshToken)
       userStore.setLoginStatus(true)
 
       // 登录成功处理

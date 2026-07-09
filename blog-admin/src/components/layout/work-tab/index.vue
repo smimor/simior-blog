@@ -468,9 +468,9 @@ import type { WorkTab } from '@/types'
 
   .tab-list {
     display: flex;
+    gap: 0.375rem;
     white-space: nowrap;
     background-color: transparent;
-    gap: 0.375rem;
 
     .tab-item {
       display: flex;
@@ -490,11 +490,11 @@ import type { WorkTab } from '@/types'
   }
 
   .arrow-down {
+    position: relative;
+    top: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    position: relative;
-    top: 0;
     text-align: center;
     cursor: pointer;
     background-color: var(--default-box-color);

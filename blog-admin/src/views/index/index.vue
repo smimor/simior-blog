@@ -51,10 +51,10 @@ const isMobile = computed(() => width.value <= MOBILE_BREAKPOINT)
 
 // 侧栏样式
 #app-sidebar {
-  background-color: var(--default-box-color);
-  border-right: 1px solid var(--card-border);
   height: 100vh;
   user-select: none;
+  background-color: var(--default-box-color);
+  border-right: 1px solid var(--card-border);
   transition:
     width 0.3s ease,
     transform 0.3s ease; // 添加过渡效果
@@ -62,13 +62,13 @@ const isMobile = computed(() => width.value <= MOBILE_BREAKPOINT)
 
 // 头部样式
 .el-header {
-  padding: 0;
   height: auto;
+  padding: 0;
 }
 
 .main-scrollbar {
   width: 100%;
-  height: v-bind(containerMinHeight);
+  height: v-bind(containerminheight);
 }
 
 // 主体样式
@@ -76,11 +76,11 @@ const isMobile = computed(() => width.value <= MOBILE_BREAKPOINT)
   :deep(.page-content) {
     position: relative;
     box-sizing: border-box;
-    overflow: hidden;
     padding: 20px;
+    overflow: hidden;
     background: var(--default-box-color);
-    border-radius: calc(var(--custom-radius) / 2 + 2px);
     border: 1px solid var(--card-border);
+    border-radius: calc(var(--custom-radius) / 2 + 2px);
   }
 }
 

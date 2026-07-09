@@ -172,10 +172,10 @@ const handleResetConfig = async () => {
 
 <style scoped lang="scss">
 .settingActions {
-  margin-top: 2.5rem;
   display: flex;
   gap: 2rem;
-  border-top: 1px solid var(--default-border);
   padding-top: 1.25rem;
+  margin-top: 2.5rem;
+  border-top: 1px solid var(--default-border);
 }
 </style>

@@ -383,11 +383,11 @@ const highlightOnHoverHistory = (index: number) => {
   .dialog-footer {
     box-sizing: border-box;
     display: flex;
+    gap: 0.875rem;
     align-items: center;
-    border-top: 1px solid var(--default-border-dashed);
     padding-top: 1.125rem;
     padding-bottom: 0.25rem;
-    gap: 0.875rem;
+    border-top: 1px solid var(--default-border-dashed);
 
     .dialog-item {
       display: flex;
@@ -395,8 +395,8 @@ const highlightOnHoverHistory = (index: number) => {
       justify-content: center;
 
       .item-label {
-        color: var(--color-g-700);
         font-size: 0.75rem;
+        color: var(--color-g-700);
       }
     }
   }

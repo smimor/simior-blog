@@ -242,16 +242,16 @@
 
   .left-section {
     display: flex;
-    align-items: center;
     flex: 1;
-    min-width: 0;
     gap: 0.625rem;
+    align-items: center;
+    min-width: 0;
   }
 
   .user-actions {
     display: flex;
-    align-items: center;
     gap: 0.625rem;
+    align-items: center;
   }
 
   .search-box {
@@ -264,14 +264,14 @@
 
     .search-content {
       display: flex;
-      align-items: center;
       gap: 0.25rem;
+      align-items: center;
     }
 
     .shortcut-keys {
       display: flex;
-      align-items: center;
       gap: 0.125rem;
+      align-items: center;
       height: 20px;
       padding-inline: 0.375rem;
       border: inherit;

@@ -407,14 +407,14 @@ watch(
   position: absolute;
   top: 3.625rem;
   right: 1.25rem;
+  z-index: 1000;
   overflow: hidden;
-  transform-origin: top;
-  will-change: top, left;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: var(--default-box-color);
   border: 1px solid var(--card-border);
   border-radius: var(--custom-radius);
-  z-index: 1000;
-  background-color: var(--default-box-color);
+  transform-origin: top;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: top, left;
 }
 
 @media (width < 640px) {
@@ -440,36 +440,36 @@ watch(
   }
 
   .btn-read {
-    font-size: 0.75rem;
     padding: 0.25rem 0.375rem;
+    font-size: 0.75rem;
     cursor: pointer;
-    border-radius: 0.25rem;
     user-select: none;
+    border-radius: 0.25rem;
     transition: all 0.2s ease;
 
     &:hover {
-      background-color: var(--color-g-200); // 悬停背景色
       color: var(--color-g-900); // 悬停文字色
+      background-color: var(--color-g-200); // 悬停背景色
     }
   }
 }
 
 .notification-tabs {
   display: flex;
-  align-items: flex-end;
   gap: 1.25rem;
+  align-items: flex-end;
   width: 100%;
   height: 3.125rem;
   padding-inline: 0.875rem;
-  border-bottom: 1px solid var(--default-border);
   color: var(--color-g-700);
   user-select: none;
+  border-bottom: 1px solid var(--default-border);
 
   li {
     height: 3rem;
-    line-height: 3rem;
     overflow: hidden;
     font-size: 13px;
+    line-height: 3rem;
     cursor: pointer;
 
     &.bar-active {
@@ -487,15 +487,15 @@ watch(
 
   .notification-list {
     height: calc(100% - 60px);
-    overflow-y: auto;
     padding: 0.5rem 0;
+    overflow-y: auto;
 
     .notification-item,
     .message-item,
     .pending-item {
       display: flex;
-      align-items: center;
       gap: 0.875rem;
+      align-items: center;
       padding: 0.875rem;
       cursor: pointer;
       transition: background-color 0.2s;
@@ -506,11 +506,11 @@ watch(
     }
 
     .icon-wrapper {
-      width: 2.25rem;
-      height: 2.25rem;
       display: flex;
       align-items: center;
       justify-content: center;
+      width: 2.25rem;
+      height: 2.25rem;
       border-radius: 0.5rem;
     }
 
@@ -525,7 +525,7 @@ watch(
     }
 
     .item-time {
-      margin: 0.375rem 0 0 0;
+      margin: 0.375rem 0 0;
       font-size: 0.75rem;
       color: var(--color-g-500);
     }
@@ -533,8 +533,8 @@ watch(
 
   .empty-state {
     position: relative;
-    margin-top: 0.875rem;
     height: 100%;
+    margin-top: 0.875rem;
     color: var(--color-g-500);
     text-align: center;
     background-color: transparent;
