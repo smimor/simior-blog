@@ -46,7 +46,7 @@ public class StpInterfaceImpl implements StpInterface {
         }
 
         SysRole role = roleMapper.selectById(user.getRoleId());
-        if (role == null || role.getRoleKey() == null || role.getStatus() != 1) {
+        if (role == null || role.getRoleKey() == null || !Integer.valueOf(1).equals(role.getStatus())) {
             return Collections.emptyList();
         }
 

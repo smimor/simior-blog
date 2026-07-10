@@ -27,7 +27,7 @@
         <url/>
     </scm>
     <properties>
-        <java.version>26</java.version>
+        <java.version>25</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <!-- 版本管理 -->
@@ -167,7 +167,6 @@
             <artifactId>hutool-all</artifactId>
             <version>${hutool.version}</version>
         </dependency>
-        <!-- 图形验证码：使用 Hutool 内置的 Captcha 模块（包含在 hutool-all 中），无需额外依赖 -->
         <!-- IP离线地址库：评论显示"来自XX省XX市"归属地信息，无需调用外部API -->
         <dependency>
             <groupId>org.lionsoul</groupId>

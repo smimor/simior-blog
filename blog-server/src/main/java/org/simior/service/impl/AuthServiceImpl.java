@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.simior.common.exception.BusinessException;
+import org.simior.common.utils.CaptchaUtil;
 import org.simior.mapper.UserMapper;
 import org.simior.model.dto.LoginDTO;
 import org.simior.model.dto.RegisterDTO;
@@ -18,8 +19,11 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 认证服务实现类
@@ -29,10 +33,12 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
-    private static final ConcurrentHashMap<String, Object> REGISTER_LOCKS = new ConcurrentHashMap<>();
     private static final String DUMMY_HASH = BCrypt.hashpw("dummy-placeholder");
     private static final String CAPTCHA_KEY_PREFIX = "captcha:";
     private static final String LOGIN_FAIL_KEY_PREFIX = "login:fail:";
+    private static final String REGISTER_LOCK_PREFIX = "lock:register:";
+    private static final long CAPTCHA_EXPIRE_MINUTES = 5;
+    private static final long REGISTER_LOCK_TIMEOUT_SECONDS = 30;
     private static final int MAX_LOGIN_ATTEMPTS = 5;
     private static final int LOGIN_LOCK_MINUTES = 15;
     private final UserMapper userMapper;
@@ -64,8 +70,8 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException("用户名或密码错误");
         }
 
-        // 4. 校验用户状态
-        if (user.getStatus() == 0) {
+        // 4. 校验用户状态（防止 getStatus() 为 null 时拆箱 NPE）
+        if (!Integer.valueOf(1).equals(user.getStatus())) {
             throw new BusinessException("账号已被禁用，请联系管理员");
         }
 
@@ -80,6 +86,27 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    public Map<String, String> getCaptcha() {
+        // 一次性生成验证码文本和图片（确保一致）
+        Map<String, String> captcha = CaptchaUtil.generate();
+        String code = captcha.get("code");
+        String captchaImage = captcha.get("image");
+
+        // 生成唯一 ID
+        String captchaId = UUID.randomUUID().toString().replace("-", "");
+
+        // 存入 Redis，5 分钟过期
+        String redisKey = CAPTCHA_KEY_PREFIX + captchaId;
+        stringRedisTemplate.opsForValue().set(redisKey, code, CAPTCHA_EXPIRE_MINUTES, TimeUnit.MINUTES);
+
+        Map<String, String> result = new HashMap<>();
+        result.put("captchaId", captchaId);
+        result.put("captchaImage", captchaImage);
+
+        return result;
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public LoginVO register(RegisterDTO registerDTO) {
         // 1. 校验两次密码是否一致
@@ -87,61 +114,59 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException("两次密码输入不一致");
         }
 
-        String lockKey = "register:" + registerDTO.getUsername().toLowerCase();
-        Object lock = REGISTER_LOCKS.computeIfAbsent(lockKey, k -> new Object());
+        String lockKey = REGISTER_LOCK_PREFIX + registerDTO.getUsername().toLowerCase();
+        tryLock(lockKey);
         try {
-            synchronized (lock) {
-                // 2. 检查用户名是否已存在
-                LambdaQueryWrapper<SysUser> queryWrapper = new LambdaQueryWrapper<>();
-                queryWrapper.eq(SysUser::getUsername, registerDTO.getUsername());
-                Long count = userMapper.selectCount(queryWrapper);
-                if (count > 0) {
-                    throw new BusinessException("用户名已存在");
-                }
-
-                // 3. 检查邮箱是否已存在（如果提供了邮箱）
-                if (registerDTO.getEmail() != null && !registerDTO.getEmail().isEmpty()) {
-                    queryWrapper = new LambdaQueryWrapper<>();
-                    queryWrapper.eq(SysUser::getEmail, registerDTO.getEmail());
-                    count = userMapper.selectCount(queryWrapper);
-                    if (count > 0) {
-                        throw new BusinessException("邮箱已被注册");
-                    }
-                }
-
-                // 4. 检查手机号是否已存在（如果提供了手机号）
-                if (registerDTO.getPhone() != null && !registerDTO.getPhone().isEmpty()) {
-                    queryWrapper = new LambdaQueryWrapper<>();
-                    queryWrapper.eq(SysUser::getPhone, registerDTO.getPhone());
-                    count = userMapper.selectCount(queryWrapper);
-                    if (count > 0) {
-                        throw new BusinessException("手机号已被注册");
-                    }
-                }
-
-                // 5. 创建用户
-                SysUser user = new SysUser();
-                user.setUsername(registerDTO.getUsername());
-                user.setPassword(BCrypt.hashpw(registerDTO.getPassword())); // BCrypt加密
-                user.setNickname(registerDTO.getNickname() != null ? registerDTO.getNickname() : registerDTO.getUsername());
-                user.setEmail(registerDTO.getEmail());
-                user.setPhone(registerDTO.getPhone());
-                user.setStatus(1); // 默认启用
-
-                // 6. 保存用户
-                int result = userMapper.insert(user);
-                if (result <= 0) {
-                    throw new BusinessException("注册失败");
-                }
-
-                // 7. 自动登录
-                StpUtil.login(user.getId());
-
-                // 8. 返回登录信息
-                return buildLoginVO(user);
+            // 2. 检查用户名是否已存在
+            LambdaQueryWrapper<SysUser> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(SysUser::getUsername, registerDTO.getUsername());
+            Long count = userMapper.selectCount(queryWrapper);
+            if (count > 0) {
+                throw new BusinessException("用户名已存在");
             }
+
+            // 3. 检查邮箱是否已存在（如果提供了邮箱）
+            if (registerDTO.getEmail() != null && !registerDTO.getEmail().isEmpty()) {
+                queryWrapper = new LambdaQueryWrapper<>();
+                queryWrapper.eq(SysUser::getEmail, registerDTO.getEmail());
+                count = userMapper.selectCount(queryWrapper);
+                if (count > 0) {
+                    throw new BusinessException("邮箱已被注册");
+                }
+            }
+
+            // 4. 检查手机号是否已存在（如果提供了手机号）
+            if (registerDTO.getPhone() != null && !registerDTO.getPhone().isEmpty()) {
+                queryWrapper = new LambdaQueryWrapper<>();
+                queryWrapper.eq(SysUser::getPhone, registerDTO.getPhone());
+                count = userMapper.selectCount(queryWrapper);
+                if (count > 0) {
+                    throw new BusinessException("手机号已被注册");
+                }
+            }
+
+            // 5. 创建用户
+            SysUser user = new SysUser();
+            user.setUsername(registerDTO.getUsername());
+            user.setPassword(BCrypt.hashpw(registerDTO.getPassword())); // BCrypt加密
+            user.setNickname(registerDTO.getNickname() != null ? registerDTO.getNickname() : registerDTO.getUsername());
+            user.setEmail(registerDTO.getEmail());
+            user.setPhone(registerDTO.getPhone());
+            user.setStatus(1); // 默认启用
+
+            // 6. 保存用户
+            int result = userMapper.insert(user);
+            if (result <= 0) {
+                throw new BusinessException("注册失败");
+            }
+
+            // 7. 自动登录
+            StpUtil.login(user.getId());
+
+            // 8. 返回登录信息
+            return buildLoginVO(user);
         } finally {
-            // 不移除锁条目，避免竞态条件（新线程获取不同锁对象）
+            unlock(lockKey);
         }
     }
 
@@ -162,7 +187,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // 检查账号状态
-        if (user.getStatus() == 0) {
+        if (!Integer.valueOf(1).equals(user.getStatus())) {
             throw new BusinessException("账号已被禁用");
         }
 
@@ -274,5 +299,17 @@ public class AuthServiceImpl implements AuthService {
     private void clearLoginFailure(String username) {
         String failKey = LOGIN_FAIL_KEY_PREFIX + username.toLowerCase();
         stringRedisTemplate.delete(failKey);
+    }
+
+    private void tryLock(String lockKey) {
+        Boolean acquired = stringRedisTemplate.opsForValue()
+                .setIfAbsent(lockKey, "1", REGISTER_LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        if (!Boolean.TRUE.equals(acquired)) {
+            throw new BusinessException("操作过于频繁，请稍后重试");
+        }
+    }
+
+    private void unlock(String lockKey) {
+        stringRedisTemplate.delete(lockKey);
     }
 }

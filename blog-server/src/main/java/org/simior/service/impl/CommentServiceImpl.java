@@ -21,26 +21,28 @@ import org.simior.service.CommentService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.springframework.data.redis.core.StringRedisTemplate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class CommentServiceImpl extends ServiceImpl<CommentMapper, BlogComment> implements CommentService {
 
-    private static final ConcurrentHashMap<String, Object> LOCK_MAP = new ConcurrentHashMap<>();
+    private static final String LOCK_KEY_PREFIX = "lock:";
+    private static final long LOCK_TIMEOUT_SECONDS = 30;
 
     private final CommentMapper commentMapper;
     private final ArticleMapper articleMapper;
     private final UserMapper userMapper;
     private final CommentLikeMapper commentLikeMapper;
+    private final StringRedisTemplate stringRedisTemplate;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -96,34 +98,24 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, BlogComment> 
     @Transactional(rollbackFor = Exception.class)
     public void likeComment(Long commentId) {
         Long userId = StpUtil.getLoginIdAsLong();
-        String lockKey = "commentLike:" + userId + ":" + commentId;
-        Object lock = LOCK_MAP.computeIfAbsent(lockKey, k -> new Object());
+        String lockKey = LOCK_KEY_PREFIX + "commentLike:" + userId + ":" + commentId;
+        tryLock(lockKey);
         try {
-            synchronized (lock) {
-                // 校验评论存在
-                BlogComment comment = commentMapper.selectById(commentId);
-                if (comment == null) {
-                    throw new BusinessException("评论不存在");
-                }
+            BlogComment comment = commentMapper.selectById(commentId);
+            if (comment == null) throw new BusinessException("评论不存在");
 
-                LambdaQueryWrapper<BlogCommentLike> wrapper = new LambdaQueryWrapper<>();
-                wrapper.eq(BlogCommentLike::getCommentId, commentId)
-                        .eq(BlogCommentLike::getUserId, userId);
-                BlogCommentLike existLike = commentLikeMapper.selectOne(wrapper);
+            LambdaQueryWrapper<BlogCommentLike> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(BlogCommentLike::getCommentId, commentId)
+                    .eq(BlogCommentLike::getUserId, userId);
+            if (commentLikeMapper.selectOne(wrapper) != null) return;
 
-                // 幂等：已点赞则直接返回，不重复操作
-                if (existLike != null) {
-                    return;
-                }
-
-                BlogCommentLike like = new BlogCommentLike();
-                like.setCommentId(commentId);
-                like.setUserId(userId);
-                commentLikeMapper.insert(like);
-                commentMapper.incrementLikeCount(commentId);
-            }
+            BlogCommentLike like = new BlogCommentLike();
+            like.setCommentId(commentId);
+            like.setUserId(userId);
+            commentLikeMapper.insert(like);
+            commentMapper.incrementLikeCount(commentId);
         } finally {
-            // 不移除锁条目，避免竞态条件
+            unlock(lockKey);
         }
     }
 
@@ -131,28 +123,23 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, BlogComment> 
     @Transactional(rollbackFor = Exception.class)
     public void unlikeComment(Long commentId) {
         Long userId = StpUtil.getLoginIdAsLong();
-        String lockKey = "commentLike:" + userId + ":" + commentId;
-        Object lock = LOCK_MAP.computeIfAbsent(lockKey, k -> new Object());
+        String lockKey = LOCK_KEY_PREFIX + "commentLike:" + userId + ":" + commentId;
+        tryLock(lockKey);
         try {
-            synchronized (lock) {
-                // 校验评论存在
-                BlogComment comment = commentMapper.selectById(commentId);
-                if (comment == null) {
-                    throw new BusinessException("评论不存在");
-                }
+            BlogComment comment = commentMapper.selectById(commentId);
+            if (comment == null) throw new BusinessException("评论不存在");
 
-                LambdaQueryWrapper<BlogCommentLike> wrapper = new LambdaQueryWrapper<>();
-                wrapper.eq(BlogCommentLike::getCommentId, commentId)
-                        .eq(BlogCommentLike::getUserId, userId);
-                BlogCommentLike existLike = commentLikeMapper.selectOne(wrapper);
+            LambdaQueryWrapper<BlogCommentLike> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(BlogCommentLike::getCommentId, commentId)
+                    .eq(BlogCommentLike::getUserId, userId);
+            BlogCommentLike existLike = commentLikeMapper.selectOne(wrapper);
 
-                if (existLike != null) {
-                    commentLikeMapper.deleteById(existLike.getId());
-                    commentMapper.decrementLikeCount(commentId);
-                }
+            if (existLike != null) {
+                commentLikeMapper.deleteById(existLike.getId());
+                commentMapper.decrementLikeCount(commentId);
             }
         } finally {
-            // 不移除锁条目，避免竞态条件
+            unlock(lockKey);
         }
     }
 
@@ -263,5 +250,17 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, BlogComment> 
 
         vo.setIsLiked(likedCommentIds.contains(comment.getId()));
         return vo;
+    }
+
+    private void tryLock(String lockKey) {
+        Boolean acquired = stringRedisTemplate.opsForValue()
+                .setIfAbsent(lockKey, "1", LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        if (!Boolean.TRUE.equals(acquired)) {
+            throw new BusinessException("操作过于频繁，请稍后重试");
+        }
+    }
+
+    private void unlock(String lockKey) {
+        stringRedisTemplate.delete(lockKey);
     }
 }

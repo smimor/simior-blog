@@ -147,7 +147,6 @@ create table `blog_article`
     `summary`       varchar(500) default null comment '文章摘要',
     `cover_image`   varchar(500) default null comment '封面图',
     `content`       longtext     not null comment '文章内容(Markdown)',
-    `html_content`  longtext     default null comment 'HTML内容',
     `is_top`        tinyint(1)   default '0' comment '是否置顶 0-否 1-是',
     `is_draft`      tinyint(1)   default '0' comment '是否草稿 0-否 1-是',
     `audit_status`  tinyint(1)   default '1' comment '审核状态 0-待审核 1-审核通过 2-审核拒绝',

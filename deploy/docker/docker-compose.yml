@@ -271,10 +271,8 @@ services:
     container_name: simior-nginx
     restart: always
     ports:
-      # 80 端口是 HTTP 默认端口，浏览器访问时不用加端口号
       - "${NGINX_PORT:-80}:80"
     volumes:
-      # 挂载 Nginx 配置文件（只读）
       - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - blog-server

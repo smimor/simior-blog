@@ -62,11 +62,6 @@ public class ArticleVO {
     private String content;
 
     /**
-     * HTML内容
-     */
-    private String htmlContent;
-
-    /**
      * 是否置顶
      */
     private Integer isTop;

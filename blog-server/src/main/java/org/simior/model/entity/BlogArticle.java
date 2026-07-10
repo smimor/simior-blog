@@ -61,11 +61,6 @@ public class BlogArticle implements Serializable {
     private String content;
 
     /**
-     * HTML内容
-     */
-    private String htmlContent;
-
-    /**
      * 是否置顶 0-否 1-是
      */
     private Integer isTop;

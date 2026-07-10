@@ -11,6 +11,8 @@ import org.simior.model.vo.UserInfoVO;
 import org.simior.service.AuthService;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 /**
  * 权限认证控制器
  * <p>
@@ -36,6 +38,19 @@ public class AuthController {
         LoginVO loginVO = authService.login(loginDTO);
         return Result.success("登录成功", loginVO);
     }
+
+
+    /**
+     * 获取图形验证码
+     *
+     * @return captchaId（用于后续校验）和 captchaImage（Base64 图片）
+     */
+    @GetMapping("/captcha")
+    public Result<Map<String, String>> getCaptcha() {
+        Map<String, String> result = authService.getCaptcha();
+        return Result.success(result);
+    }
+
 
     /**
      * 用户注册（注册成功后自动登录）

@@ -5,6 +5,8 @@ import org.simior.model.dto.RegisterDTO;
 import org.simior.model.vo.LoginVO;
 import org.simior.model.vo.UserInfoVO;
 
+import java.util.Map;
+
 /**
  * 认证服务接口
  */
@@ -17,6 +19,13 @@ public interface AuthService {
      * @return 登录结果
      */
     LoginVO login(LoginDTO loginDTO);
+
+    /**
+     * 获取图形验证码
+     *
+     * @return captchaId（用于后续校验）和 captchaImage（Base64 图片）
+     */
+    Map<String, String> getCaptcha();
 
     /**
      * 用户注册

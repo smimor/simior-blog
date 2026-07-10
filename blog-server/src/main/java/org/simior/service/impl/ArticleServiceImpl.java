@@ -16,6 +16,7 @@ import org.simior.model.vo.ArticleVO;
 import org.simior.model.vo.TagVO;
 import org.simior.service.ArticleService;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -26,7 +27,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -37,7 +38,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> implements ArticleService {
 
-    private static final ConcurrentHashMap<String, Object> LOCK_MAP = new ConcurrentHashMap<>();
+    private static final String LOCK_KEY_PREFIX = "lock:";
+    private static final long LOCK_TIMEOUT_SECONDS = 30;
 
     private final ArticleMapper articleMapper;
     private final ArticleTagMapper articleTagMapper;
@@ -48,6 +50,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> 
     private final TagMapper tagMapper;
     private final UserMapper userMapper;
     private final CommentMapper commentMapper;
+    private final StringRedisTemplate stringRedisTemplate;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -148,9 +151,6 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> 
         }
         if (articleDTO.getContent() != null) {
             article.setContent(articleDTO.getContent());
-        }
-        if (articleDTO.getHtmlContent() != null) {
-            article.setHtmlContent(articleDTO.getHtmlContent());
         }
         if (articleDTO.getCategoryId() != null) {
             article.setCategoryId(articleDTO.getCategoryId());
@@ -344,37 +344,24 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> 
     @Transactional(rollbackFor = Exception.class)
     public void likeArticle(Long articleId) {
         Long userId = StpUtil.getLoginIdAsLong();
-        String lockKey = "like:" + userId + ":" + articleId;
-        Object lock = LOCK_MAP.computeIfAbsent(lockKey, k -> new Object());
+        String lockKey = LOCK_KEY_PREFIX + "like:" + userId + ":" + articleId;
+        tryLock(lockKey);
         try {
-            synchronized (lock) {
-                // 校验文章存在
-                BlogArticle article = articleMapper.selectById(articleId);
-                if (article == null) {
-                    throw new BusinessException("文章不存在");
-                }
+            BlogArticle article = articleMapper.selectById(articleId);
+            if (article == null) throw new BusinessException("文章不存在");
 
-                // 查询是否已点赞
-                LambdaQueryWrapper<BlogArticleLike> wrapper = new LambdaQueryWrapper<>();
-                wrapper.eq(BlogArticleLike::getArticleId, articleId)
-                        .eq(BlogArticleLike::getUserId, userId);
-                BlogArticleLike existLike = articleLikeMapper.selectOne(wrapper);
+            LambdaQueryWrapper<BlogArticleLike> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(BlogArticleLike::getArticleId, articleId)
+                    .eq(BlogArticleLike::getUserId, userId);
+            if (articleLikeMapper.selectOne(wrapper) != null) return;
 
-                if (existLike != null) {
-                    // 已点赞，幂等返回
-                    return;
-                }
-
-                // 点赞
-                BlogArticleLike like = new BlogArticleLike();
-                like.setArticleId(articleId);
-                like.setUserId(userId);
-                articleLikeMapper.insert(like);
-                // 原子更新文章点赞数
-                articleMapper.incrementLikeCount(articleId);
-            }
+            BlogArticleLike like = new BlogArticleLike();
+            like.setArticleId(articleId);
+            like.setUserId(userId);
+            articleLikeMapper.insert(like);
+            articleMapper.incrementLikeCount(articleId);
         } finally {
-            // 不移除锁条目，避免竞态条件
+            unlock(lockKey);
         }
     }
 
@@ -382,34 +369,22 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> 
     @Transactional(rollbackFor = Exception.class)
     public void unlikeArticle(Long articleId) {
         Long userId = StpUtil.getLoginIdAsLong();
-        String lockKey = "like:" + userId + ":" + articleId;
-        Object lock = LOCK_MAP.computeIfAbsent(lockKey, k -> new Object());
+        String lockKey = LOCK_KEY_PREFIX + "like:" + userId + ":" + articleId;
+        tryLock(lockKey);
         try {
-            synchronized (lock) {
-                // 校验文章存在
-                BlogArticle article = articleMapper.selectById(articleId);
-                if (article == null) {
-                    throw new BusinessException("文章不存在");
-                }
+            BlogArticle article = articleMapper.selectById(articleId);
+            if (article == null) throw new BusinessException("文章不存在");
 
-                // 查询是否已点赞
-                LambdaQueryWrapper<BlogArticleLike> wrapper = new LambdaQueryWrapper<>();
-                wrapper.eq(BlogArticleLike::getArticleId, articleId)
-                        .eq(BlogArticleLike::getUserId, userId);
-                BlogArticleLike existLike = articleLikeMapper.selectOne(wrapper);
+            LambdaQueryWrapper<BlogArticleLike> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(BlogArticleLike::getArticleId, articleId)
+                    .eq(BlogArticleLike::getUserId, userId);
+            BlogArticleLike existLike = articleLikeMapper.selectOne(wrapper);
+            if (existLike == null) return;
 
-                if (existLike == null) {
-                    // 未点赞，幂等返回
-                    return;
-                }
-
-                // 取消点赞
-                articleLikeMapper.deleteById(existLike.getId());
-                // 原子更新文章点赞数
-                articleMapper.decrementLikeCount(articleId);
-            }
+            articleLikeMapper.deleteById(existLike.getId());
+            articleMapper.decrementLikeCount(articleId);
         } finally {
-            // 不移除锁条目，避免竞态条件
+            unlock(lockKey);
         }
     }
 
@@ -417,37 +392,24 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> 
     @Transactional(rollbackFor = Exception.class)
     public void collectArticle(Long articleId) {
         Long userId = StpUtil.getLoginIdAsLong();
-        String lockKey = "collect:" + userId + ":" + articleId;
-        Object lock = LOCK_MAP.computeIfAbsent(lockKey, k -> new Object());
+        String lockKey = LOCK_KEY_PREFIX + "collect:" + userId + ":" + articleId;
+        tryLock(lockKey);
         try {
-            synchronized (lock) {
-                // 校验文章存在
-                BlogArticle article = articleMapper.selectById(articleId);
-                if (article == null) {
-                    throw new BusinessException("文章不存在");
-                }
+            BlogArticle article = articleMapper.selectById(articleId);
+            if (article == null) throw new BusinessException("文章不存在");
 
-                // 查询是否已收藏
-                LambdaQueryWrapper<BlogArticleCollect> wrapper = new LambdaQueryWrapper<>();
-                wrapper.eq(BlogArticleCollect::getArticleId, articleId)
-                        .eq(BlogArticleCollect::getUserId, userId);
-                BlogArticleCollect existCollect = articleCollectMapper.selectOne(wrapper);
+            LambdaQueryWrapper<BlogArticleCollect> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(BlogArticleCollect::getArticleId, articleId)
+                    .eq(BlogArticleCollect::getUserId, userId);
+            if (articleCollectMapper.selectOne(wrapper) != null) return;
 
-                if (existCollect != null) {
-                    // 已收藏，幂等返回
-                    return;
-                }
-
-                // 收藏
-                BlogArticleCollect collect = new BlogArticleCollect();
-                collect.setArticleId(articleId);
-                collect.setUserId(userId);
-                articleCollectMapper.insert(collect);
-                // 原子更新文章收藏数
-                articleMapper.incrementCollectCount(articleId);
-            }
+            BlogArticleCollect collect = new BlogArticleCollect();
+            collect.setArticleId(articleId);
+            collect.setUserId(userId);
+            articleCollectMapper.insert(collect);
+            articleMapper.incrementCollectCount(articleId);
         } finally {
-            // 不移除锁条目，避免竞态条件
+            unlock(lockKey);
         }
     }
 
@@ -455,34 +417,22 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> 
     @Transactional(rollbackFor = Exception.class)
     public void uncollectArticle(Long articleId) {
         Long userId = StpUtil.getLoginIdAsLong();
-        String lockKey = "collect:" + userId + ":" + articleId;
-        Object lock = LOCK_MAP.computeIfAbsent(lockKey, k -> new Object());
+        String lockKey = LOCK_KEY_PREFIX + "collect:" + userId + ":" + articleId;
+        tryLock(lockKey);
         try {
-            synchronized (lock) {
-                // 校验文章存在
-                BlogArticle article = articleMapper.selectById(articleId);
-                if (article == null) {
-                    throw new BusinessException("文章不存在");
-                }
+            BlogArticle article = articleMapper.selectById(articleId);
+            if (article == null) throw new BusinessException("文章不存在");
 
-                // 查询是否已收藏
-                LambdaQueryWrapper<BlogArticleCollect> wrapper = new LambdaQueryWrapper<>();
-                wrapper.eq(BlogArticleCollect::getArticleId, articleId)
-                        .eq(BlogArticleCollect::getUserId, userId);
-                BlogArticleCollect existCollect = articleCollectMapper.selectOne(wrapper);
+            LambdaQueryWrapper<BlogArticleCollect> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(BlogArticleCollect::getArticleId, articleId)
+                    .eq(BlogArticleCollect::getUserId, userId);
+            BlogArticleCollect existCollect = articleCollectMapper.selectOne(wrapper);
+            if (existCollect == null) return;
 
-                if (existCollect == null) {
-                    // 未收藏，幂等返回
-                    return;
-                }
-
-                // 取消收藏
-                articleCollectMapper.deleteById(existCollect.getId());
-                // 原子更新文章收藏数
-                articleMapper.decrementCollectCount(articleId);
-            }
+            articleCollectMapper.deleteById(existCollect.getId());
+            articleMapper.decrementCollectCount(articleId);
         } finally {
-            // 不移除锁条目，避免竞态条件
+            unlock(lockKey);
         }
     }
 
@@ -525,20 +475,23 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> 
 
     /**
      * 获取客户端真实 IP 地址
+     * 优先取 X-Real-IP（Nginx 设置，不可被客户端伪造），
+     * X-Forwarded-For 可被客户端伪造，仅作为最后兜底。
      */
     private String getClientIp() {
         jakarta.servlet.http.HttpServletRequest request =
                 ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
-        String ip = request.getHeader("X-Forwarded-For");
+        // 优先 X-Real-IP（Nginx 的 proxy_set_header X-Real-IP 只取第一个代理的真实 IP）
+        String ip = request.getHeader("X-Real-IP");
         if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("X-Real-IP");
+            ip = request.getHeader("X-Forwarded-For");
         }
         if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getRemoteAddr();
         }
-        // X-Forwarded-For 可能包含多个 IP，取第一个
+        // X-Forwarded-For 可能包含多个 IP，取最后一个（最靠近服务端的代理）
         if (ip != null && ip.contains(",")) {
-            ip = ip.split(",")[0].trim();
+            ip = ip.split(",")[ip.split(",").length - 1].trim();
         }
         return ip;
     }
@@ -615,6 +568,24 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> 
 
             return vo;
         }).collect(Collectors.toList());
+    }
+
+    /**
+     * Redis 分布式锁：获取锁（SETNX + TTL，30 秒自动过期防止死锁）
+     */
+    private void tryLock(String lockKey) {
+        Boolean acquired = stringRedisTemplate.opsForValue()
+                .setIfAbsent(lockKey, "1", LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        if (!Boolean.TRUE.equals(acquired)) {
+            throw new BusinessException("操作过于频繁，请稍后重试");
+        }
+    }
+
+    /**
+     * Redis 分布式锁：释放锁
+     */
+    private void unlock(String lockKey) {
+        stringRedisTemplate.delete(lockKey);
     }
 
 }

@@ -1,5 +1,6 @@
 package org.simior.controller;
 
+import cn.dev33.satoken.annotation.SaCheckRole;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +20,8 @@ import java.util.List;
  * URL 前缀：/v1/articles，遵循 RESTful 风格使用复数名词。
  * <p>
  * 公开接口（无需登录）：列表、详情、热门、推荐
- * 需登录接口：发布、编辑、删除、点赞、收藏、我的文章
+ * 需 author 或 admin 角色：发布、编辑、删除
+ * 需登录（任意角色）：点赞、收藏、我的文章
  */
 @RestController
 @RequestMapping("/v1/articles")
@@ -29,11 +31,12 @@ public class ArticleController {
     private final ArticleService articleService;
 
     /**
-     * 发布文章
+     * 发布文章（需 author 或 admin 角色）
      *
      * @param articleDTO 文章数据
      * @return 新文章ID
      */
+    @SaCheckRole({"admin", "author"})
     @PostMapping
     public Result<Long> publishArticle(@Valid @RequestBody ArticleDTO articleDTO) {
         Long articleId = articleService.publishArticle(articleDTO);
@@ -41,11 +44,12 @@ public class ArticleController {
     }
 
     /**
-     * 删除文章（仅作者本人可操作）
+     * 删除文章（仅作者本人或管理员可操作）
      *
      * @param id 文章ID
      * @return 操作结果
      */
+    @SaCheckRole({"admin", "author"})
     @DeleteMapping("/{id}")
     public Result<String> deleteArticle(@PathVariable Long id) {
         articleService.deleteArticle(id);
@@ -53,12 +57,13 @@ public class ArticleController {
     }
 
     /**
-     * 编辑文章（仅作者本人可操作）
+     * 编辑文章（仅作者本人或管理员可操作）
      *
      * @param id         文章ID
      * @param articleDTO 文章数据
      * @return 操作结果
      */
+    @SaCheckRole({"admin", "author"})
     @PutMapping("/{id}")
     public Result<String> updateArticle(@PathVariable Long id, @Valid @RequestBody ArticleDTO articleDTO) {
         articleDTO.setId(id);

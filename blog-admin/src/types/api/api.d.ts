@@ -238,8 +238,6 @@ declare namespace Api {
       coverImage: string
       /** 文章内容(Markdown) */
       content: string
-      /** HTML内容 */
-      htmlContent: string
       /** 是否置顶 */
       isTop: number
       /** 是否草稿 */

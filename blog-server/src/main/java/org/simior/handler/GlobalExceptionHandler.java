@@ -6,6 +6,7 @@ import cn.dev33.satoken.exception.NotRoleException;
 import lombok.extern.slf4j.Slf4j;
 import org.simior.common.exception.BusinessException;
 import org.simior.common.result.Result;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -22,11 +23,11 @@ import java.sql.SQLIntegrityConstraintViolationException;
 public class GlobalExceptionHandler {
 
     /**
-     * 处理 Sa-Token 未登录异常
+     * 处理 Sa-Token 未登录异常（401 → warn，非系统错误）
      */
     @ExceptionHandler(NotLoginException.class)
     public Result<String> handleNotLoginException(NotLoginException e) {
-        log.error("用户未登录：{}", e.getMessage());
+        log.warn("用户未登录：{}", e.getMessage());
         String message = switch (e.getType()) {
             case NotLoginException.NOT_TOKEN -> "未提供token";
             case NotLoginException.INVALID_TOKEN -> "token无效";
@@ -39,43 +40,53 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理 Sa-Token 无权限异常
+     * 处理 Sa-Token 无权限异常（403 → warn）
      */
     @ExceptionHandler(NotPermissionException.class)
     public Result<String> handleNotPermissionException(NotPermissionException e) {
-        log.error("权限不足：{}", e.getMessage());
+        log.warn("权限不足：{}", e.getMessage());
         return Result.error(403, "权限不足");
     }
 
     /**
-     * 处理 Sa-Token 无角色异常
+     * 处理 Sa-Token 无角色异常（403 → warn）
      */
     @ExceptionHandler(NotRoleException.class)
     public Result<String> handleNotRoleException(NotRoleException e) {
-        log.error("角色不足：{}", e.getMessage());
+        log.warn("角色不足：{}", e.getMessage());
         return Result.error(403, "角色不足");
     }
 
     /**
-     * 处理参数校验异常
+     * 处理参数校验异常（400 → warn）
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public Result<String> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
         FieldError fieldError = e.getBindingResult().getFieldError();
         String message = fieldError != null ? fieldError.getDefaultMessage() : "参数校验失败";
-        log.error("参数校验失败：{}", message);
+        log.warn("参数校验失败：{}", message);
         return Result.error(400, message);
     }
 
     /**
-     * 处理参数绑定异常
+     * 处理参数绑定异常（400 → warn）
      */
     @ExceptionHandler(BindException.class)
     public Result<String> handleBindException(BindException e) {
         FieldError fieldError = e.getBindingResult().getFieldError();
         String message = fieldError != null ? fieldError.getDefaultMessage() : "参数绑定失败";
-        log.error("参数绑定失败：{}", message);
+        log.warn("参数绑定失败：{}", message);
         return Result.error(400, message);
+    }
+
+    /**
+     * 处理请求体不可读异常（400 → warn）
+     * 例如：JSON 格式错误、类型不匹配
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public Result<String> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
+        log.warn("请求体解析失败：{}", e.getMessage());
+        return Result.error(400, "请求参数格式错误");
     }
 
     /**
@@ -83,7 +94,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(BusinessException.class)
     public Result<String> handleBusinessException(BusinessException e) {
-        log.error("业务异常：{}", e.getMessage());
+        log.warn("业务异常：{}", e.getMessage());
         return Result.error(e.getCode(), e.getMessage());
     }
 
