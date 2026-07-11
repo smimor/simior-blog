@@ -2,7 +2,6 @@ package org.simior.config;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.StrUtil;
-import com.google.common.net.HttpHeaders;
 import lombok.RequiredArgsConstructor;
 import org.simior.handler.MyWebSocketHandler;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.web.socket.WebSocketHandler;
+import org.springframework.web.socket.WebSocketHttpHeaders;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
@@ -80,7 +80,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
             attributes.put("userId", loginId.toString());
             // 在响应头回写标准子协议名，告知客户端协议协商成功
-            response.getHeaders().set(HttpHeaders.SEC_WEBSOCKET_PROTOCOL, "bearer");
+            response.getHeaders().set(WebSocketHttpHeaders.SEC_WEBSOCKET_PROTOCOL, "bearer");
             return true;
         }
 
@@ -94,7 +94,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
          * 客户端发送格式：Sec-WebSocket-Protocol: Bearer.<token>, bearer
          */
         private String extractTokenFromProtocol(ServerHttpRequest request) {
-            String protocols = request.getHeaders().getFirst(HttpHeaders.SEC_WEBSOCKET_PROTOCOL);
+            String protocols = request.getHeaders().getFirst(WebSocketHttpHeaders.SEC_WEBSOCKET_PROTOCOL);
             if (protocols == null) return null;
 
             for (String protocol : protocols.split(",")) {

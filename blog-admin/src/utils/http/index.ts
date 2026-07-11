@@ -23,7 +23,7 @@ import type { BaseResponse } from '@/types'
 /** 请求配置常量 */
 const REQUEST_TIMEOUT = 15000
 const LOGOUT_DELAY = 500
-const MAX_RETRIES = 0
+const MAX_RETRIES = 2
 const RETRY_DELAY = 1000
 const UNAUTHORIZED_DEBOUNCE_TIME = 3000
 
@@ -199,13 +199,13 @@ const api = {
     return retryRequest<T>({ ...config, method: 'GET' })
   },
   post<T>(config: ExtendedAxiosRequestConfig) {
-    return retryRequest<T>({ ...config, method: 'POST' })
+    return request<T>({ ...config, method: 'POST' })
   },
   put<T>(config: ExtendedAxiosRequestConfig) {
-    return retryRequest<T>({ ...config, method: 'PUT' })
+    return request<T>({ ...config, method: 'PUT' })
   },
   del<T>(config: ExtendedAxiosRequestConfig) {
-    return retryRequest<T>({ ...config, method: 'DELETE' })
+    return request<T>({ ...config, method: 'DELETE' })
   },
   request<T>(config: ExtendedAxiosRequestConfig) {
     return retryRequest<T>(config)
