@@ -2,6 +2,7 @@ package org.simior.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckRole;
+import cn.hutool.core.io.FileTypeUtil;
 import lombok.RequiredArgsConstructor;
 import org.simior.common.result.Result;
 import org.simior.properties.UploadProperties;
@@ -105,6 +106,16 @@ public class FileController {
         if (!isContentTypeMatchExtension(contentType, ext)) {
             return Result.error("文件内容与扩展名不匹配");
         }
+        // Magic Number 校验：读取文件头字节判断真实类型，防止伪造扩展名和 Content-Type
+        String realType;
+        try {
+            realType = FileTypeUtil.getType(file.getInputStream());
+        } catch (Exception e) {
+            return Result.error("文件读取失败");
+        }
+        if (!isAllowedImageType(realType)) {
+            return Result.error("文件头校验失败：非合法图片文件");
+        }
         long maxSize = (long) maxMB * 1024 * 1024;
         if (file.getSize() > maxSize) {
             return Result.error("文件大小不能超过" + maxMB + "MB");
@@ -125,6 +136,17 @@ public class FileController {
             case "bmp" -> contentType.equals("image/bmp");
             case "webp" -> contentType.equals("image/webp");
             case "ico" -> contentType.equals("image/x-icon") || contentType.equals("image/vnd.microsoft.icon");
+            default -> false;
+        };
+    }
+
+    /**
+     * 校验 Magic Number 识别出的真实文件类型是否为允许的图片格式
+     */
+    private boolean isAllowedImageType(String realType) {
+        if (realType == null) return false;
+        return switch (realType.toLowerCase()) {
+            case "jpg", "jpeg", "png", "gif", "bmp", "webp", "ico" -> true;
             default -> false;
         };
     }

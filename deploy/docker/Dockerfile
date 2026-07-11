@@ -6,14 +6,12 @@
 #   第 2 步（运行）：只用 JRE 运行 jar 包，镜像更小更安全
 #
 # 构建命令：docker build -f deploy/docker/Dockerfile -t simior-server .
-# ============================================
+# ======
+# 基础镜像：包含完整 JDK（编译工具）
+# 注意：必须与 pom.xml 中 <java.version> 保持一致的大版本号！======================================
 
 # ---- 第 1 步：编译构建 ----
-# 基础镜像：包含完整 JDK（编译工具）
-# 注意：必须与 pom.xml 中 <java.version> 保持一致的大版本号！
-# eclipse-temurin:latest 目前指向的是最新 LTS（25），而不是 26，
-# 用它编译 java.version=26 的项目会在 mvnw package 阶段直接报错。
-FROM eclipse-temurin:26-jdk AS builder
+FROM eclipse-temurin:25-jdk AS builder
 WORKDIR /app
 
 # 复制 Maven 配置文件（用于下载依赖）
@@ -31,7 +29,7 @@ RUN cd blog-server && ./mvnw package -DskipTests -q -s .mvn/settings.xml
 # ---- 第 2 步：运行 ----
 # 基础镜像：只有 JRE（运行环境），没有编译工具，体积更小
 # 同样钉死版本号，且用 -jre 变体（比 builder 用的 -jdk 更小、攻击面更小）
-FROM eclipse-temurin:26-jre
+FROM eclipse-temurin:25-jre
 LABEL maintainer="simior"
 
 # 创建非 root 用户运行应用

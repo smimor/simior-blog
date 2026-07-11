@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.sql.SQLIntegrityConstraintViolationException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * 全局异常处理器，处理项目中抛出的业务异常
@@ -99,23 +101,18 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理SQL异常
+     * 处理SQL异常（唯一约束冲突）
      */
     @ExceptionHandler
     public Result<String> exceptionHandler(SQLIntegrityConstraintViolationException ex) {
         String message = ex.getMessage();
         if (message != null && message.contains("Duplicate entry")) {
-            String[] split = message.split(" ");
-            if (split.length >= 3) {
-                String value = split[2];
-                // 去除引号包裹
-                if (value.startsWith("'") && value.endsWith("'")) {
-                    value = value.substring(1, value.length() - 1);
-                }
-                return Result.error(value + "已存在");
+            Matcher matcher = Pattern.compile("Duplicate entry '(.*?)' for key").matcher(message);
+            if (matcher.find()) {
+                return Result.error(matcher.group(1) + "已存在");
             }
         }
-        log.error("SQL约束异常：{}", message);
+        log.warn("SQL约束异常：{}", message);
         return Result.error("数据重复，请检查输入");
     }
 

@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.simior.common.exception.BusinessException;
+import org.simior.common.utils.RedisLockUtil;
 import org.simior.mapper.*;
 import org.simior.model.dto.ArticleDTO;
 import org.simior.model.entity.*;
@@ -17,6 +18,7 @@ import org.simior.model.vo.TagVO;
 import org.simior.service.ArticleService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -27,6 +29,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -39,7 +42,6 @@ import java.util.stream.Collectors;
 public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> implements ArticleService {
 
     private static final String LOCK_KEY_PREFIX = "lock:";
-    private static final long LOCK_TIMEOUT_SECONDS = 30;
 
     private final ArticleMapper articleMapper;
     private final ArticleTagMapper articleTagMapper;
@@ -51,6 +53,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> 
     private final UserMapper userMapper;
     private final CommentMapper commentMapper;
     private final StringRedisTemplate stringRedisTemplate;
+    private final RedisLockUtil redisLockUtil;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -345,7 +348,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> 
     public void likeArticle(Long articleId) {
         Long userId = StpUtil.getLoginIdAsLong();
         String lockKey = LOCK_KEY_PREFIX + "like:" + userId + ":" + articleId;
-        tryLock(lockKey);
+        String lockToken = redisLockUtil.tryLock(lockKey);
         try {
             BlogArticle article = articleMapper.selectById(articleId);
             if (article == null) throw new BusinessException("文章不存在");
@@ -361,7 +364,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> 
             articleLikeMapper.insert(like);
             articleMapper.incrementLikeCount(articleId);
         } finally {
-            unlock(lockKey);
+            redisLockUtil.unlock(lockKey, lockToken);
         }
     }
 
@@ -370,7 +373,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> 
     public void unlikeArticle(Long articleId) {
         Long userId = StpUtil.getLoginIdAsLong();
         String lockKey = LOCK_KEY_PREFIX + "like:" + userId + ":" + articleId;
-        tryLock(lockKey);
+        String lockToken = redisLockUtil.tryLock(lockKey);
         try {
             BlogArticle article = articleMapper.selectById(articleId);
             if (article == null) throw new BusinessException("文章不存在");
@@ -384,7 +387,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> 
             articleLikeMapper.deleteById(existLike.getId());
             articleMapper.decrementLikeCount(articleId);
         } finally {
-            unlock(lockKey);
+            redisLockUtil.unlock(lockKey, lockToken);
         }
     }
 
@@ -393,7 +396,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> 
     public void collectArticle(Long articleId) {
         Long userId = StpUtil.getLoginIdAsLong();
         String lockKey = LOCK_KEY_PREFIX + "collect:" + userId + ":" + articleId;
-        tryLock(lockKey);
+        String lockToken = redisLockUtil.tryLock(lockKey);
         try {
             BlogArticle article = articleMapper.selectById(articleId);
             if (article == null) throw new BusinessException("文章不存在");
@@ -409,7 +412,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> 
             articleCollectMapper.insert(collect);
             articleMapper.incrementCollectCount(articleId);
         } finally {
-            unlock(lockKey);
+            redisLockUtil.unlock(lockKey, lockToken);
         }
     }
 
@@ -418,7 +421,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> 
     public void uncollectArticle(Long articleId) {
         Long userId = StpUtil.getLoginIdAsLong();
         String lockKey = LOCK_KEY_PREFIX + "collect:" + userId + ":" + articleId;
-        tryLock(lockKey);
+        String lockToken = redisLockUtil.tryLock(lockKey);
         try {
             BlogArticle article = articleMapper.selectById(articleId);
             if (article == null) throw new BusinessException("文章不存在");
@@ -432,7 +435,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> 
             articleCollectMapper.deleteById(existCollect.getId());
             articleMapper.decrementCollectCount(articleId);
         } finally {
-            unlock(lockKey);
+            redisLockUtil.unlock(lockKey, lockToken);
         }
     }
 
@@ -568,24 +571,6 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> 
 
             return vo;
         }).collect(Collectors.toList());
-    }
-
-    /**
-     * Redis 分布式锁：获取锁（SETNX + TTL，30 秒自动过期防止死锁）
-     */
-    private void tryLock(String lockKey) {
-        Boolean acquired = stringRedisTemplate.opsForValue()
-                .setIfAbsent(lockKey, "1", LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        if (!Boolean.TRUE.equals(acquired)) {
-            throw new BusinessException("操作过于频繁，请稍后重试");
-        }
-    }
-
-    /**
-     * Redis 分布式锁：释放锁
-     */
-    private void unlock(String lockKey) {
-        stringRedisTemplate.delete(lockKey);
     }
 
 }

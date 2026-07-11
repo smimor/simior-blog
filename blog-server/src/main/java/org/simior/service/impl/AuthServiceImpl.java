@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.simior.common.exception.BusinessException;
 import org.simior.common.utils.CaptchaUtil;
+import org.simior.common.utils.RedisLockUtil;
 import org.simior.mapper.UserMapper;
 import org.simior.model.dto.LoginDTO;
 import org.simior.model.dto.RegisterDTO;
@@ -16,6 +17,7 @@ import org.simior.model.vo.UserInfoVO;
 import org.simior.service.AuthService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,11 +40,11 @@ public class AuthServiceImpl implements AuthService {
     private static final String LOGIN_FAIL_KEY_PREFIX = "login:fail:";
     private static final String REGISTER_LOCK_PREFIX = "lock:register:";
     private static final long CAPTCHA_EXPIRE_MINUTES = 5;
-    private static final long REGISTER_LOCK_TIMEOUT_SECONDS = 30;
     private static final int MAX_LOGIN_ATTEMPTS = 5;
     private static final int LOGIN_LOCK_MINUTES = 15;
     private final UserMapper userMapper;
     private final StringRedisTemplate stringRedisTemplate;
+    private final RedisLockUtil redisLockUtil;
 
     @Override
     public LoginVO login(LoginDTO loginDTO) {
@@ -115,7 +117,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String lockKey = REGISTER_LOCK_PREFIX + registerDTO.getUsername().toLowerCase();
-        tryLock(lockKey);
+        String lockToken = redisLockUtil.tryLock(lockKey);
         try {
             // 2. 检查用户名是否已存在
             LambdaQueryWrapper<SysUser> queryWrapper = new LambdaQueryWrapper<>();
@@ -166,7 +168,7 @@ public class AuthServiceImpl implements AuthService {
             // 8. 返回登录信息
             return buildLoginVO(user);
         } finally {
-            unlock(lockKey);
+            redisLockUtil.unlock(lockKey, lockToken);
         }
     }
 
@@ -299,17 +301,5 @@ public class AuthServiceImpl implements AuthService {
     private void clearLoginFailure(String username) {
         String failKey = LOGIN_FAIL_KEY_PREFIX + username.toLowerCase();
         stringRedisTemplate.delete(failKey);
-    }
-
-    private void tryLock(String lockKey) {
-        Boolean acquired = stringRedisTemplate.opsForValue()
-                .setIfAbsent(lockKey, "1", REGISTER_LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        if (!Boolean.TRUE.equals(acquired)) {
-            throw new BusinessException("操作过于频繁，请稍后重试");
-        }
-    }
-
-    private void unlock(String lockKey) {
-        stringRedisTemplate.delete(lockKey);
     }
 }

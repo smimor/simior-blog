@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.simior.common.exception.BusinessException;
+import org.simior.common.utils.RedisLockUtil;
 import org.simior.mapper.ArticleMapper;
 import org.simior.mapper.CommentLikeMapper;
 import org.simior.mapper.CommentMapper;
@@ -28,6 +29,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -36,13 +38,13 @@ import java.util.stream.Collectors;
 public class CommentServiceImpl extends ServiceImpl<CommentMapper, BlogComment> implements CommentService {
 
     private static final String LOCK_KEY_PREFIX = "lock:";
-    private static final long LOCK_TIMEOUT_SECONDS = 30;
 
     private final CommentMapper commentMapper;
     private final ArticleMapper articleMapper;
     private final UserMapper userMapper;
     private final CommentLikeMapper commentLikeMapper;
     private final StringRedisTemplate stringRedisTemplate;
+    private final RedisLockUtil redisLockUtil;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -99,7 +101,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, BlogComment> 
     public void likeComment(Long commentId) {
         Long userId = StpUtil.getLoginIdAsLong();
         String lockKey = LOCK_KEY_PREFIX + "commentLike:" + userId + ":" + commentId;
-        tryLock(lockKey);
+        String lockToken = redisLockUtil.tryLock(lockKey);
         try {
             BlogComment comment = commentMapper.selectById(commentId);
             if (comment == null) throw new BusinessException("评论不存在");
@@ -115,7 +117,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, BlogComment> 
             commentLikeMapper.insert(like);
             commentMapper.incrementLikeCount(commentId);
         } finally {
-            unlock(lockKey);
+            redisLockUtil.unlock(lockKey, lockToken);
         }
     }
 
@@ -124,7 +126,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, BlogComment> 
     public void unlikeComment(Long commentId) {
         Long userId = StpUtil.getLoginIdAsLong();
         String lockKey = LOCK_KEY_PREFIX + "commentLike:" + userId + ":" + commentId;
-        tryLock(lockKey);
+        String lockToken = redisLockUtil.tryLock(lockKey);
         try {
             BlogComment comment = commentMapper.selectById(commentId);
             if (comment == null) throw new BusinessException("评论不存在");
@@ -139,7 +141,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, BlogComment> 
                 commentMapper.decrementLikeCount(commentId);
             }
         } finally {
-            unlock(lockKey);
+            redisLockUtil.unlock(lockKey, lockToken);
         }
     }
 
@@ -250,17 +252,5 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, BlogComment> 
 
         vo.setIsLiked(likedCommentIds.contains(comment.getId()));
         return vo;
-    }
-
-    private void tryLock(String lockKey) {
-        Boolean acquired = stringRedisTemplate.opsForValue()
-                .setIfAbsent(lockKey, "1", LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        if (!Boolean.TRUE.equals(acquired)) {
-            throw new BusinessException("操作过于频繁，请稍后重试");
-        }
-    }
-
-    private void unlock(String lockKey) {
-        stringRedisTemplate.delete(lockKey);
     }
 }

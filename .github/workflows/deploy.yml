@@ -1,88 +1,88 @@
-# ============================================
-# GitHub Actions 自动部署工作流
-#
-# 触发条件：
-#   - push 到 main 分支
-#   - 手动触发（workflow_dispatch）
-#
-# 部署流程：
-#   1. SSH 连接到服务器
-#   2. 拉取最新代码
-#   3. 构建并启动所有 Docker 容器
-#
-# 使用前准备：
-#   1. 在 GitHub 仓库 Settings > Secrets 中添加：
-#      - SERVER_HOST: 服务器 IP
-#      - SERVER_USER: SSH 用户名（root）
-#      - SERVER_PASSWORD: SSH 密码
-# ============================================
+# # ============================================
+# # GitHub Actions 自动部署工作流
+# #
+# # 触发条件：
+# #   - push 到 main 分支
+# #   - 手动触发（workflow_dispatch）
+# #
+# # 部署流程：
+# #   1. SSH 连接到服务器
+# #   2. 拉取最新代码
+# #   3. 构建并启动所有 Docker 容器
+# #
+# # 使用前准备：
+# #   1. 在 GitHub 仓库 Settings > Secrets 中添加：
+# #      - SERVER_HOST: 服务器 IP
+# #      - SERVER_USER: SSH 用户名（root）
+# #      - SERVER_PASSWORD: SSH 密码
+# # ============================================
 
-name: 自动部署
+# name: 自动部署
 
-# 触发条件
-on:
-  # push 到 main 分支时自动部署
-  push:
-    branches: [main]
+# # 触发条件
+# on:
+#   # push 到 main 分支时自动部署
+#   push:
+#     branches: [main]
 
-  # 手动触发（在 GitHub Actions 页面点击 "Run workflow"）
-  workflow_dispatch:
+#   # 手动触发（在 GitHub Actions 页面点击 "Run workflow"）
+#   workflow_dispatch:
 
-jobs:
-  # ==========================================
-  # 部署任务
-  # ==========================================
-  deploy:
-    name: 部署到服务器
-    runs-on: ubuntu-latest
+# jobs:
+#   # ==========================================
+#   # 部署任务
+#   # ==========================================
+#   deploy:
+#     name: 部署到服务器
+#     runs-on: ubuntu-latest
 
-    steps:
-      # 第 1 步：检出代码
-      - name: 检出代码
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+#     steps:
+#       # 第 1 步：检出代码
+#       - name: 检出代码
+#         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      # 第 2 步：SSH 部署到服务器
-      - name: 部署到服务器
-        uses: appleboy/ssh-action@057eff1234e9d73275ce51ed3895c11f07dd0f1b # v1.1.0
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          password: ${{ secrets.SERVER_PASSWORD }}
-          port: ${{ secrets.SERVER_PORT || 22 }}
-          timeout: 30s
-          script: |
-            set -e
-            
-            echo "=== 开始部署 ==="
-            echo "当前用户: $(whoami)"
-            echo "当前目录: $(pwd)"
-            
-            # 进入项目目录
-            cd /opt/simior-blog || { echo "错误：项目目录不存在"; exit 1; }
-            echo "进入项目目录: $(pwd)"
-            
-            # 拉取最新代码
-            echo "拉取最新代码..."
-            git pull origin main || { echo "错误：git pull 失败"; exit 1; }
-            
-            # 执行统一的部署脚本
-            echo "执行部署脚本..."
-            bash deploy/scripts/deploy.sh
-            
-            # 等待服务启动
-            echo "等待服务启动..."
-            sleep 30
-            
-            # 检查服务状态
-            echo "服务状态："
-            cd deploy/docker && docker compose ps
-            
-            echo ""
-            echo "=== 部署完成 ==="
-            echo "   前台: http://${{ secrets.SERVER_HOST }}/"
-            echo "   后台: http://${{ secrets.SERVER_HOST }}/admin"
-            echo "   API:  http://${{ secrets.SERVER_HOST }}/api/"
+#       # 第 2 步：SSH 部署到服务器
+#       - name: 部署到服务器
+#         uses: appleboy/ssh-action@057eff1234e9d73275ce51ed3895c11f07dd0f1b # v1.1.0
+#         with:
+#           host: ${{ secrets.SERVER_HOST }}
+#           username: ${{ secrets.SERVER_USER }}
+#           password: ${{ secrets.SERVER_PASSWORD }}
+#           port: ${{ secrets.SERVER_PORT || 22 }}
+#           timeout: 30s
+#           script: |
+#             set -e
 
-      # 第 3 步：部署完成通知（可选）
-      - name: 部署完成
-        run: echo "部署完成！访问 http://${{ secrets.SERVER_HOST }}/"
+#             echo "=== 开始部署 ==="
+#             echo "当前用户: $(whoami)"
+#             echo "当前目录: $(pwd)"
+
+#             # 进入项目目录
+#             cd /opt/simior-blog || { echo "错误：项目目录不存在"; exit 1; }
+#             echo "进入项目目录: $(pwd)"
+
+#             # 拉取最新代码
+#             echo "拉取最新代码..."
+#             git pull origin main || { echo "错误：git pull 失败"; exit 1; }
+
+#             # 执行统一的部署脚本
+#             echo "执行部署脚本..."
+#             bash deploy/scripts/deploy.sh
+
+#             # 等待服务启动
+#             echo "等待服务启动..."
+#             sleep 30
+
+#             # 检查服务状态
+#             echo "服务状态："
+#             cd deploy/docker && docker compose ps
+
+#             echo ""
+#             echo "=== 部署完成 ==="
+#             echo "   前台: http://${{ secrets.SERVER_HOST }}/"
+#             echo "   后台: http://${{ secrets.SERVER_HOST }}/admin"
+#             echo "   API:  http://${{ secrets.SERVER_HOST }}/api/"
+
+#       # 第 3 步：部署完成通知（可选）
+#       - name: 部署完成
+#         run: echo "部署完成！访问 http://${{ secrets.SERVER_HOST }}/"

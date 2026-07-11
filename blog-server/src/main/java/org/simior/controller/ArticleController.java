@@ -1,6 +1,7 @@
 package org.simior.controller;
 
 import cn.dev33.satoken.annotation.SaCheckRole;
+import cn.dev33.satoken.annotation.SaMode;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +37,7 @@ public class ArticleController {
      * @param articleDTO 文章数据
      * @return 新文章ID
      */
-    @SaCheckRole({"admin", "author"})
+    @SaCheckRole(value = {"admin", "author"}, mode = SaMode.OR)
     @PostMapping
     public Result<Long> publishArticle(@Valid @RequestBody ArticleDTO articleDTO) {
         Long articleId = articleService.publishArticle(articleDTO);
@@ -49,7 +50,7 @@ public class ArticleController {
      * @param id 文章ID
      * @return 操作结果
      */
-    @SaCheckRole({"admin", "author"})
+    @SaCheckRole(value = {"admin", "author"}, mode = SaMode.OR)
     @DeleteMapping("/{id}")
     public Result<String> deleteArticle(@PathVariable Long id) {
         articleService.deleteArticle(id);
@@ -63,7 +64,7 @@ public class ArticleController {
      * @param articleDTO 文章数据
      * @return 操作结果
      */
-    @SaCheckRole({"admin", "author"})
+    @SaCheckRole(value = {"admin", "author"}, mode = SaMode.OR)
     @PutMapping("/{id}")
     public Result<String> updateArticle(@PathVariable Long id, @Valid @RequestBody ArticleDTO articleDTO) {
         articleDTO.setId(id);
