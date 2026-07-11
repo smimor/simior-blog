@@ -7,7 +7,6 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.simior.common.exception.BusinessException;
-import org.simior.common.utils.RedisLockUtil;
 import org.simior.mapper.ArticleMapper;
 import org.simior.mapper.CommentLikeMapper;
 import org.simior.mapper.CommentMapper;
@@ -20,6 +19,7 @@ import org.simior.model.entity.SysUser;
 import org.simior.model.vo.CommentVO;
 import org.simior.service.CommentService;
 import org.springframework.beans.BeanUtils;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -29,22 +29,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class CommentServiceImpl extends ServiceImpl<CommentMapper, BlogComment> implements CommentService {
 
-    private static final String LOCK_KEY_PREFIX = "lock:";
-
     private final CommentMapper commentMapper;
     private final ArticleMapper articleMapper;
     private final UserMapper userMapper;
     private final CommentLikeMapper commentLikeMapper;
-    private final StringRedisTemplate stringRedisTemplate;
-    private final RedisLockUtil redisLockUtil;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -99,49 +93,28 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, BlogComment> 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void likeComment(Long commentId) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        String lockKey = LOCK_KEY_PREFIX + "commentLike:" + userId + ":" + commentId;
-        String lockToken = redisLockUtil.tryLock(lockKey);
-        try {
-            BlogComment comment = commentMapper.selectById(commentId);
-            if (comment == null) throw new BusinessException("评论不存在");
-
-            LambdaQueryWrapper<BlogCommentLike> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(BlogCommentLike::getCommentId, commentId)
-                    .eq(BlogCommentLike::getUserId, userId);
-            if (commentLikeMapper.selectOne(wrapper) != null) return;
-
-            BlogCommentLike like = new BlogCommentLike();
-            like.setCommentId(commentId);
-            like.setUserId(userId);
-            commentLikeMapper.insert(like);
-            commentMapper.incrementLikeCount(commentId);
-        } finally {
-            redisLockUtil.unlock(lockKey, lockToken);
+        if (commentMapper.selectById(commentId) == null) {
+            throw new BusinessException("评论不存在");
         }
+        BlogCommentLike like = new BlogCommentLike();
+        like.setCommentId(commentId);
+        like.setUserId(StpUtil.getLoginIdAsLong());
+        try {
+            commentLikeMapper.insert(like);
+        } catch (DuplicateKeyException e) {
+            return;
+        }
+        commentMapper.incrementLikeCount(commentId);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void unlikeComment(Long commentId) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        String lockKey = LOCK_KEY_PREFIX + "commentLike:" + userId + ":" + commentId;
-        String lockToken = redisLockUtil.tryLock(lockKey);
-        try {
-            BlogComment comment = commentMapper.selectById(commentId);
-            if (comment == null) throw new BusinessException("评论不存在");
-
-            LambdaQueryWrapper<BlogCommentLike> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(BlogCommentLike::getCommentId, commentId)
-                    .eq(BlogCommentLike::getUserId, userId);
-            BlogCommentLike existLike = commentLikeMapper.selectOne(wrapper);
-
-            if (existLike != null) {
-                commentLikeMapper.deleteById(existLike.getId());
-                commentMapper.decrementLikeCount(commentId);
-            }
-        } finally {
-            redisLockUtil.unlock(lockKey, lockToken);
+        LambdaQueryWrapper<BlogCommentLike> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(BlogCommentLike::getCommentId, commentId)
+                .eq(BlogCommentLike::getUserId, StpUtil.getLoginIdAsLong());
+        if (commentLikeMapper.delete(wrapper) > 0) {
+            commentMapper.decrementLikeCount(commentId);
         }
     }
 

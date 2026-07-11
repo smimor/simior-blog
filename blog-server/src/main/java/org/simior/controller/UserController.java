@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.simior.common.result.Result;
+import org.simior.common.utils.PageUtils;
 import org.simior.model.dto.UserCreateDTO;
 import org.simior.model.dto.UserUpdateDTO;
 import org.simior.model.vo.UserVO;
@@ -91,8 +92,8 @@ public class UserController {
             @RequestParam(defaultValue = "1") Long pageNum,
             @RequestParam(defaultValue = "10") Long pageSize,
             @RequestParam(required = false) String username) {
-        pageNum = Math.max(pageNum, 1);
-        pageSize = Math.min(Math.max(pageSize, 1), 100);
+        pageNum = PageUtils.clamp(pageNum, 1, Long.MAX_VALUE);
+        pageSize = PageUtils.clamp(pageSize, 1, 100);
         Page<UserVO> voPage = userService.pageUserVOs(pageNum, pageSize, username);
         return Result.success(voPage);
     }

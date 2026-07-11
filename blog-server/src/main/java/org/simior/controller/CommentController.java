@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.simior.common.result.Result;
+import org.simior.common.utils.PageUtils;
 import org.simior.model.dto.CommentDTO;
 import org.simior.model.vo.CommentVO;
 import org.simior.service.CommentService;
@@ -86,8 +87,8 @@ public class CommentController {
             @PathVariable Long articleId,
             @RequestParam(defaultValue = "1") Long pageNum,
             @RequestParam(defaultValue = "10") Long pageSize) {
-        pageNum = Math.max(pageNum, 1);
-        pageSize = Math.min(Math.max(pageSize, 1), 100);
+        pageNum = PageUtils.clamp(pageNum, 1, Long.MAX_VALUE);
+        pageSize = PageUtils.clamp(pageSize, 1, 100);
         Page<CommentVO> page = commentService.getArticleComments(articleId, pageNum, pageSize);
         return Result.success(page);
     }

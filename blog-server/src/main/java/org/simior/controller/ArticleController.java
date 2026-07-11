@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.simior.common.result.Result;
+import org.simior.common.utils.PageUtils;
 import org.simior.model.dto.ArticleDTO;
 import org.simior.model.vo.ArticleListVO;
 import org.simior.model.vo.ArticleVO;
@@ -102,8 +103,8 @@ public class ArticleController {
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Long tagId,
             @RequestParam(required = false) String keyword) {
-        pageNum = Math.max(pageNum, 1);
-        pageSize = Math.min(Math.max(pageSize, 1), 100);
+        pageNum = PageUtils.clamp(pageNum, 1, Long.MAX_VALUE);
+        pageSize = PageUtils.clamp(pageSize, 1, 100);
         Page<ArticleListVO> page = articleService.getArticleList(pageNum, pageSize, categoryId, tagId, keyword);
         return Result.success(page);
     }
@@ -116,7 +117,7 @@ public class ArticleController {
      */
     @GetMapping("/hot")
     public Result<List<ArticleListVO>> getHotArticles(@RequestParam(defaultValue = "5") Integer limit) {
-        limit = Math.min(Math.max(limit, 1), 50);
+        limit = PageUtils.clamp(limit, 1, 50);
         List<ArticleListVO> articles = articleService.getHotArticles(limit);
         return Result.success(articles);
     }
@@ -129,7 +130,7 @@ public class ArticleController {
      */
     @GetMapping("/recommend")
     public Result<List<ArticleListVO>> getRecommendArticles(@RequestParam(defaultValue = "3") Integer limit) {
-        limit = Math.min(Math.max(limit, 1), 50);
+        limit = PageUtils.clamp(limit, 1, 50);
         List<ArticleListVO> articles = articleService.getRecommendArticles(limit);
         return Result.success(articles);
     }
@@ -145,8 +146,8 @@ public class ArticleController {
     public Result<Page<ArticleListVO>> getMyArticles(
             @RequestParam(defaultValue = "1") Long pageNum,
             @RequestParam(defaultValue = "10") Long pageSize) {
-        pageNum = Math.max(pageNum, 1);
-        pageSize = Math.min(Math.max(pageSize, 1), 100);
+        pageNum = PageUtils.clamp(pageNum, 1, Long.MAX_VALUE);
+        pageSize = PageUtils.clamp(pageSize, 1, 100);
         Page<ArticleListVO> page = articleService.getMyArticles(pageNum, pageSize);
         return Result.success(page);
     }

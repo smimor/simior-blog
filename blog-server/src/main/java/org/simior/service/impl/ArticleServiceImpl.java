@@ -8,7 +8,6 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.simior.common.exception.BusinessException;
-import org.simior.common.utils.RedisLockUtil;
 import org.simior.mapper.*;
 import org.simior.model.dto.ArticleDTO;
 import org.simior.model.entity.*;
@@ -17,8 +16,7 @@ import org.simior.model.vo.ArticleVO;
 import org.simior.model.vo.TagVO;
 import org.simior.service.ArticleService;
 import org.springframework.beans.BeanUtils;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -29,8 +27,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -41,8 +37,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> implements ArticleService {
 
-    private static final String LOCK_KEY_PREFIX = "lock:";
-
     private final ArticleMapper articleMapper;
     private final ArticleTagMapper articleTagMapper;
     private final ArticleLikeMapper articleLikeMapper;
@@ -52,8 +46,6 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> 
     private final TagMapper tagMapper;
     private final UserMapper userMapper;
     private final CommentMapper commentMapper;
-    private final StringRedisTemplate stringRedisTemplate;
-    private final RedisLockUtil redisLockUtil;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -346,96 +338,56 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, BlogArticle> 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void likeArticle(Long articleId) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        String lockKey = LOCK_KEY_PREFIX + "like:" + userId + ":" + articleId;
-        String lockToken = redisLockUtil.tryLock(lockKey);
-        try {
-            BlogArticle article = articleMapper.selectById(articleId);
-            if (article == null) throw new BusinessException("文章不存在");
-
-            LambdaQueryWrapper<BlogArticleLike> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(BlogArticleLike::getArticleId, articleId)
-                    .eq(BlogArticleLike::getUserId, userId);
-            if (articleLikeMapper.selectOne(wrapper) != null) return;
-
-            BlogArticleLike like = new BlogArticleLike();
-            like.setArticleId(articleId);
-            like.setUserId(userId);
-            articleLikeMapper.insert(like);
-            articleMapper.incrementLikeCount(articleId);
-        } finally {
-            redisLockUtil.unlock(lockKey, lockToken);
+        if (articleMapper.selectById(articleId) == null) {
+            throw new BusinessException("文章不存在");
         }
+        BlogArticleLike like = new BlogArticleLike();
+        like.setArticleId(articleId);
+        like.setUserId(StpUtil.getLoginIdAsLong());
+        try {
+            articleLikeMapper.insert(like);
+        } catch (DuplicateKeyException e) {
+            return; // 已点赞，幂等返回
+        }
+        articleMapper.incrementLikeCount(articleId);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void unlikeArticle(Long articleId) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        String lockKey = LOCK_KEY_PREFIX + "like:" + userId + ":" + articleId;
-        String lockToken = redisLockUtil.tryLock(lockKey);
-        try {
-            BlogArticle article = articleMapper.selectById(articleId);
-            if (article == null) throw new BusinessException("文章不存在");
-
-            LambdaQueryWrapper<BlogArticleLike> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(BlogArticleLike::getArticleId, articleId)
-                    .eq(BlogArticleLike::getUserId, userId);
-            BlogArticleLike existLike = articleLikeMapper.selectOne(wrapper);
-            if (existLike == null) return;
-
-            articleLikeMapper.deleteById(existLike.getId());
+        LambdaQueryWrapper<BlogArticleLike> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(BlogArticleLike::getArticleId, articleId)
+                .eq(BlogArticleLike::getUserId, StpUtil.getLoginIdAsLong());
+        if (articleLikeMapper.delete(wrapper) > 0) {
             articleMapper.decrementLikeCount(articleId);
-        } finally {
-            redisLockUtil.unlock(lockKey, lockToken);
         }
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void collectArticle(Long articleId) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        String lockKey = LOCK_KEY_PREFIX + "collect:" + userId + ":" + articleId;
-        String lockToken = redisLockUtil.tryLock(lockKey);
-        try {
-            BlogArticle article = articleMapper.selectById(articleId);
-            if (article == null) throw new BusinessException("文章不存在");
-
-            LambdaQueryWrapper<BlogArticleCollect> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(BlogArticleCollect::getArticleId, articleId)
-                    .eq(BlogArticleCollect::getUserId, userId);
-            if (articleCollectMapper.selectOne(wrapper) != null) return;
-
-            BlogArticleCollect collect = new BlogArticleCollect();
-            collect.setArticleId(articleId);
-            collect.setUserId(userId);
-            articleCollectMapper.insert(collect);
-            articleMapper.incrementCollectCount(articleId);
-        } finally {
-            redisLockUtil.unlock(lockKey, lockToken);
+        if (articleMapper.selectById(articleId) == null) {
+            throw new BusinessException("文章不存在");
         }
+        BlogArticleCollect collect = new BlogArticleCollect();
+        collect.setArticleId(articleId);
+        collect.setUserId(StpUtil.getLoginIdAsLong());
+        try {
+            articleCollectMapper.insert(collect);
+        } catch (DuplicateKeyException e) {
+            return; // 已收藏，幂等返回
+        }
+        articleMapper.incrementCollectCount(articleId);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void uncollectArticle(Long articleId) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        String lockKey = LOCK_KEY_PREFIX + "collect:" + userId + ":" + articleId;
-        String lockToken = redisLockUtil.tryLock(lockKey);
-        try {
-            BlogArticle article = articleMapper.selectById(articleId);
-            if (article == null) throw new BusinessException("文章不存在");
-
-            LambdaQueryWrapper<BlogArticleCollect> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(BlogArticleCollect::getArticleId, articleId)
-                    .eq(BlogArticleCollect::getUserId, userId);
-            BlogArticleCollect existCollect = articleCollectMapper.selectOne(wrapper);
-            if (existCollect == null) return;
-
-            articleCollectMapper.deleteById(existCollect.getId());
+        LambdaQueryWrapper<BlogArticleCollect> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(BlogArticleCollect::getArticleId, articleId)
+                .eq(BlogArticleCollect::getUserId, StpUtil.getLoginIdAsLong());
+        if (articleCollectMapper.delete(wrapper) > 0) {
             articleMapper.decrementCollectCount(articleId);
-        } finally {
-            redisLockUtil.unlock(lockKey, lockToken);
         }
     }
 
