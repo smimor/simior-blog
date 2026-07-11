@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import org.simior.handler.MyWebSocketHandler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.web.socket.WebSocketHandler;
@@ -36,12 +35,12 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketConfigurer {
 
+    public static final String SEC_WEBSOCKET_PROTOCOL = "Sec-WebSocket-Protocol";
     private static final String TOKEN_PROTOCOL_PREFIX = "Bearer.";
+    private final MyWebSocketHandler myWebSocketHandler;
 
     @Value("${blog.cors.allowed-origins:}")
     private String allowedOrigins;
-
-    private final MyWebSocketHandler myWebSocketHandler;
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
@@ -81,7 +80,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
             attributes.put("userId", loginId.toString());
             // 在响应头回写标准子协议名，告知客户端协议协商成功
-            response.getHeaders().set(HttpHeaders.SEC_WEBSOCKET_PROTOCOL, "bearer");
+            response.getHeaders().set(SEC_WEBSOCKET_PROTOCOL, "bearer");
             return true;
         }
 
@@ -95,7 +94,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
          * 客户端发送格式：Sec-WebSocket-Protocol: Bearer.<token>, bearer
          */
         private String extractTokenFromProtocol(ServerHttpRequest request) {
-            String protocols = request.getHeaders().getFirst(HttpHeaders.SEC_WEBSOCKET_PROTOCOL);
+            String protocols = request.getHeaders().getFirst(SEC_WEBSOCKET_PROTOCOL);
             if (protocols == null) return null;
 
             for (String protocol : protocols.split(",")) {
