@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 /**
  * simior-blog 博客系统后端应用入口类
  * <p>
- * 基于 Spring Boot 4.1 + MyBatis-Plus + Sa-Token 构建的全栈博客系统服务端。
+ * 基于 Spring Boot 4.x + MyBatis-Plus + Sa-Token 构建的全栈博客系统服务端。
  * 启用事务管理和缓存支持。
  */
 @SpringBootApplication

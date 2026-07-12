@@ -6,7 +6,7 @@
 
 | 组件 | 技术 |
 |------|------|
-| 后端 | Spring Boot 4.1 + MyBatis-Plus + Sa-Token |
+| 后端 | Spring Boot 4.x + MyBatis-Plus + Sa-Token |
 | 管理后台 | Vue 3 + TypeScript + Vite + Element Plus |
 | 前台 | Next.js + React |
 | 数据库 | MySQL |
